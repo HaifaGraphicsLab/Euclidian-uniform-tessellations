@@ -13,7 +13,8 @@ After much headache I thought that the direction the project is heading is too r
 I want to create a hexagonaical planet voxel engine. What does that mean? I plan on making an interactive spherical enviroment made out of hex prisms (kind of).
 The planet will be shaped like a geodical dome made out of hexagons.
 
-![](64559-goldberg-polyhedron-10-0.png)
 The first problem I encountered is that there is no such object. you cant tile a sphere with hexagons, that is due to euler charitaristic. That means that we will have to have a couple of pentagons as well. The tiling will be by projecting an icosahedron to a spherical plance. Where each face will represent a chunck which will have a 3d hexaprism coordinate system. 
+![](64559-goldberg-polyhedron-10-0.png)
+
 
 Then I thought to reasearch hexagon coordinate systems. I will most likely use the axial representation even though that if I want to fill up an entire 2d array, the chunck will be need to be comprimised of two face of the icosahedron, leaving us with 10 chucks.
