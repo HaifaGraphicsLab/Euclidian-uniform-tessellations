@@ -24,8 +24,9 @@ Then I thought to reasearch hexagon coordinate systems. I will most likely use t
 ### 25/3 
 Started the implementation this week. Most of the week went away to bashing my head with CMAKE, the general program flow is similar to the Computer Graphics Course assignments. Then I started implementing the openGL framework. It took so much more time than I'd like to admit until there was a visible triangle on screen. Then I built the basic program chunck layout. Each chunck is a face of the rendered icosahedron. 
 
-![MDAssets/basicShape.PNG]
+![](MDAssets/basicShape.PNG)
 
 Finally I added basic ImGui functionality. 
+
 **Total Time** ~8 hours
 
