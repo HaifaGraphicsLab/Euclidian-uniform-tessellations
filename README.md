@@ -1,4 +1,4 @@
-+# My Project
+# My Project
 ## weekly report
 
 ### until 3/19 (~2 weeks from being set on the genral direction of the project)
