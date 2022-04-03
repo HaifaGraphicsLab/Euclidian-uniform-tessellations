@@ -7,35 +7,35 @@
 
 
 
-Grid::Grid(size_t x, size_t y, size_t z) : x(x), y(y), z(z){
+Grid::Grid(int x, int y, int z) : x(x), y(y), z(z){
 	this->data = new BlockType[x * y * z];
 	for (int i = 0; i < x * y * z; i++) {
 		this->data[i] = BlockType::None;
 	}
 }
 
-BlockType& Grid::operator()(size_t x, size_t y, size_t z) const{
-	assertm(x < this->x && x > 0, "X out of bounds");
-	assertm(y < this->y && y > 0, "Y out of bounds");
-	assertm(z < this->z && z > 0, "Z out of bounds");
+BlockType& Grid::operator()(int x, int y, int z) const{
+	assertm((x < this->x) && x >= 0, "X out of bounds");
+	assertm((y < this->y) && y >= 0, "Y out of bounds");
+	assertm((z < this->z) && z >= 0, "Z out of bounds");
 
-	size_t loc = z * this->x * this->y + y * this->x + this->x;
+	int loc = z * this->x * this->y + y * this->x + x;
 	return data[loc];
 }
 
-size_t Grid::getX() const{
+int Grid::getX() const{
 	return x;
 }
-size_t Grid::getY() const {
+int Grid::getY() const {
 	return y;
 }
-size_t Grid::getZ() const {
+int Grid::getZ() const {
 	return z;
 }
 void Grid::print() const{
 	for (int i = 0; i < z; i++) {
 		for (int j = 0; j < y; j++) {
-			for (int k = 0; k < z; k++) {
+			for (int k = 0; k < x; k++) {
 				std::cout << operator()(k, j, i) << " ";
 			}
 			std::cout << std::endl;

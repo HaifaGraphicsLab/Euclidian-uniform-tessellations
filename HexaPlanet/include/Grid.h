@@ -9,11 +9,11 @@ enum BlockType {
 
 class Grid {
 public:
-	Grid(size_t x, size_t y, size_t z);
-	BlockType& operator()(size_t x, size_t y, size_t z) const;
-	size_t getX() const;
-	size_t getY() const;
-	size_t getZ() const;
+	Grid(int x, int y, int z);
+	BlockType& operator()(int x, int y, int z) const;
+	int getX() const;
+	int getY() const;
+	int getZ() const;
 	void print() const;
 	~Grid();
 
@@ -22,9 +22,9 @@ public:
 
 private:
 	BlockType* data;
-	size_t x;
-	size_t y;
-	size_t z;
+	int x;
+	int y;
+	int z;
 
 	// no assignment or copying
 	Grid& operator=(const Grid&) = delete;

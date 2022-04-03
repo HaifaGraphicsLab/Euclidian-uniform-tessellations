@@ -3,9 +3,11 @@
 layout(location = 0) in vec3 pos;
 layout(location = 1) in int colorIndex;
 
-const vec3 colorArray[3] = vec3[3]( vec3(1, 0, 0),
+const vec3 colorArray[5] = vec3[5]( vec3(1, 0, 0),
 vec3(0, 1, 0),
-vec3(0, 0, 1)
+vec3(0, 0, 1),
+vec3(1, 1, 0),
+vec3(0, 1, 1)
 );
 
 uniform mat4 view;

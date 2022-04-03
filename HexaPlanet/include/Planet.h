@@ -1,25 +1,30 @@
 #pragma once
 #include "Chunk.h"
 #include <vector>
-
+#include "Grid.h"
 
 class Planet {
 public:
-	Planet();
+	Planet(int size, int maxHeight);
 	Chunk* getChunk(int chunk) const;
 	bool isActive(int chunk) const;
 
 private:
 	Chunk* chunks[20];
+	bool activeChunks[20];
+
 	glm::vec3 icosahedronVertices[12];
 	GLuint icosahedronIndices[20][3] = {
-   {0,4,1}, {0,9,4}, {9,5,4}, {4,5,8}, {4,8,1},
-   {8,10,1}, {8,3,10}, {5,3,8}, {5,2,3}, {2,7,3},
-   {7,10,3}, {7,6,10}, {7,11,6}, {11,0,6}, {0,1,6},
-   {6,1,10}, {9,0,11}, {9,11,2}, {9,2,5}, {7,2,11} 
+		{0,1,2}, {0,2,3}, {0,3,4}, {0,4,5}, {0,5,1},
+		{1,2,7}, {2,3,8}, {4,3,9}, {5,4,10}, {1,5,6},
+		{1,6,7},{2,7,8},{3,8,9}, {4,9,10}, {5,10,6},
+		{6,7,11}, {7,8,11}, {8,9,11}, {9,10,11}, {10,6,11}
 	};
 
-	bool activeChunks[20];
+	
+	Grid *grid[5];
+	int size;
+	int maxHeight;
 
 	void generateIcosahedronVertices();
 };
