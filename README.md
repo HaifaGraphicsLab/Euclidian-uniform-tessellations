@@ -56,6 +56,7 @@ This roughly is the algorithm to find the center of the hexaprism. However, find
 In order to find the vertices, I use the fact that the hexagon is the face dual of a triangle, so the vertices are the average between the centers of its neighbors.
 
 So the theory is kind of under control, however does it work?
+
 ![](MDAssets/glitchyMess.PNG)
 ![](MDAssets/glitchyMess2.PNG)
 ![](MDAssets/superGlitchyMess.PNG)
