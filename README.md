@@ -38,6 +38,7 @@ First I worked on a basic camera setup. Next I implemented the voxel grid. This 
 Due to this new requirement I needed to reimplement the icosahedron because previously it was all over the place.
 Why represent this way?
 Here is a cardboard cutout of an isocahedron:
+```
     / \   / \   / \   / \   / \
    /   \ /   \ /   \ /   \ /   \
   --------------- ----- ---------
@@ -46,7 +47,7 @@ Here is a cardboard cutout of an isocahedron:
      - - ----- ---- ---- ---- ---- - 
       \   / \   / \   / \   / \   /
        \ /   \ /   \ /   \ /   \ /
-
+```
 In this representation, each vertical strip is a root chunk. And therefor all root chunks are symetrical.
 
 Most of the time this week went to the hexagon convertion. My idea is to do the following - too render a voxel, first I translate the grid index to a 2d coordinate system shaped like the centers of a hexahedron grid system. Then based on the index of the chunk within the root chunk, I find the barycentric coords of the relevent triangle within the root chunk. Then I perform **double slerp** to find the projection of the point on a sphere. As for the height, that is a seperate system that indepedently calculates the height (more to work on later). 
