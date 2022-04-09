@@ -67,3 +67,21 @@ let's leave something to do next week!!
 
 **Total Time** ~12 hours
 
+### 9/4
+
+This week was intensive. The code went through two major overhauls. Due to the glitchy mess of last week, I decided I need to understand whats going on there and not just mindlessly changing parameters until it works. So I started working on the neighbor coordinate system and found out that the inner chunk neighbors make no sense so I updated the chunk representation system (yes again) and now I (kind of) understand whats gong on. After that things started to look correct. However I couldn't get rid of the inaccuracies between the boundaries of two root chunks: 
+
+![](MDAssets/inaccuracies.PNG)
+
+No matter how much I tried nothing worked. Being frustrated I decided to be productive and quickly implemented a camera movement system, which will help me debugging. The inaccuracy is an inherent bug of the current implemetation - each chunk is being caclulated relative to the baricentric coordinates of the appropriate isocahedron face, and then is projected onto a sphere and thats the cause of the inaccuracies because the chunks have a slightly different coordinate system due to the different slopes of an icosahedron in space. 
+
+Thats were major overhaul no.2 comes into play - First I needed to finalize the neighbor system. That's because the new way of creating the hexagon vertices is to take the average of the neighbors (even when the neigbors are cross chunks, or even worse, cross root chunks), in this way, adjacent hexagons agree on the same borders, even if they are located on different chunks. Here is what it looks like now:
+
+![](MDAssets/finally.gif)
+
+Yay!! Finally something that looks correct. Turning the hexagons into a prism is not hard at all. Now every hexaprism is comprised of 20 faces - 4 for the top, 4 for the bottom, and 2 for each side. Here is a demonstration of the system: 
+
+![](MDAssets/entirePlanet.PNG)
+
+One thing I didn't metion is that I implemented simple ambient occlusion - i.e. I darken the sides of the prisms to create the effect of shading. 
+**Total Time** ~20 hours
