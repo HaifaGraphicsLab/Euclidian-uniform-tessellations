@@ -85,3 +85,16 @@ Yay!! Finally something that looks correct. Turning the hexagons into a prism is
 
 One thing I didn't metion is that I implemented simple ambient occlusion - i.e. I darken the sides of the prisms to create the effect of shading. 
 **Total Time** ~20 hours
+
+### Next Week 
+Turns out the system falters with a small size (I want it to support any size - even a simple decoahdron). Here is what it looks like:
+
+![](MDAssets/badFootball.PNG)
+
+The reason for this is because I thought I could get away with only to hexagons - one at the top and at the bottom. However that is not the case. There should be 12 hexagons. It is obvious when I delete the bad voxels, we get the following shape:
+
+![](MDAssets/goodFootball.PNG)
+
+
+
+
