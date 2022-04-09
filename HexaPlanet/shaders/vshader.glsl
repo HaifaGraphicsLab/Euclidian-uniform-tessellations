@@ -2,6 +2,7 @@
 
 layout(location = 0) in vec3 pos;
 layout(location = 1) in int colorIndex;
+layout(location = 2) in int ambientOcclusion;
 
 const vec3 colorArray[5] = vec3[5]( vec3(1, 0, 0),
 vec3(0, 1, 0),
@@ -25,6 +26,8 @@ void main()
 
 
 	// This is an internal OpenGL variable, we must set a value to this variable
+	float alpha = 1-ambientOcclusion/4.0;
+
 	vec3 color = colorArray[colorIndex];
-	vertexColor = vec4(color, 1.0);
+	vertexColor = vec4(color, 1.0) * alpha;
 }

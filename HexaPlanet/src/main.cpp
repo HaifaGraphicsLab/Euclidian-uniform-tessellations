@@ -21,7 +21,10 @@
 glm::vec4 clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 1.00f);
 int windowWidth = 1280, windowHeight = 720;
 
-
+float lastFrame = 0.0f;
+float lastMouseX, lastMouseY;
+float firstMouse = true;
+Scene* s;
 /**
  * Function declarations
  */
@@ -32,6 +35,8 @@ void StartFrame();
 void RenderFrame(GLFWwindow* window, Scene& scene, Renderer& renderer, ImGuiIO& io);
 void Cleanup(GLFWwindow* window);
 void DrawImguiMenus(ImGuiIO& io, Scene& scene);
+void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+
 
 /**
  * Function implementation
@@ -39,8 +44,28 @@ void DrawImguiMenus(ImGuiIO& io, Scene& scene);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
-	// TODO: Handle mouse scroll here
+	s->getActiveCamera().setFov(s->getActiveCamera().getFov() - (float)yoffset);
 }
+
+void mouseCallback(GLFWwindow* window, double xpos, double ypos)
+{
+	if (firstMouse) {
+		lastMouseX = xpos;
+		lastMouseY = ypos;
+		firstMouse = false;
+	}
+
+	float xOffset = xpos - lastMouseX;
+	float yOffset = lastMouseY - ypos;
+
+	lastMouseX = xpos;
+	lastMouseY = ypos;
+
+	float senstivity = 0.1f;
+	s->getActiveCamera().setYaw(s->getActiveCamera().getYaw() + xOffset * senstivity);
+	s->getActiveCamera().setPitch(s->getActiveCamera().getPitch() + yOffset * senstivity);
+}
+
 
 int main(int argc, char **argv)
 {
@@ -51,12 +76,17 @@ int main(int argc, char **argv)
 	int frameBufferWidth, frameBufferHeight;
 	glfwMakeContextCurrent(window);
 	glfwGetFramebufferSize(window, &frameBufferWidth, &frameBufferHeight);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 
 	Renderer renderer = Renderer(frameBufferWidth, frameBufferHeight);
 	Scene scene = Scene();
+	s = &scene;
 	
 	ImGuiIO& io = SetupDearImgui(window);
 	glfwSetScrollCallback(window, ScrollCallback);
+	glfwSetCursorPosCallback(window, mouseCallback);
+
 
 	glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
 	glEnable(GL_DEPTH_TEST);
@@ -143,6 +173,18 @@ void RenderFrame(GLFWwindow* window, Scene& scene, Renderer& renderer, ImGuiIO& 
 		glViewport(0, 0, windowWidth, windowHeight);
 	}
 
+	Camera& activeCamera = scene.getActiveCamera();
+
+	if ((float)frameBufferHeight / frameBufferWidth != activeCamera.getAspectRatio()) {
+		activeCamera.setAspectRatio((float)frameBufferHeight / frameBufferWidth);
+	}
+	float cameraSpeed = 10.0f;
+
+	//calculate delta time
+	float currentFrame = glfwGetTime();
+	float deltaTime = currentFrame - lastFrame;
+	lastFrame = currentFrame;
+
 	if (!io.WantCaptureKeyboard)
 	{
 		// TODO: Handle keyboard events here
@@ -164,19 +206,23 @@ void RenderFrame(GLFWwindow* window, Scene& scene, Renderer& renderer, ImGuiIO& 
 		}
 		if (io.KeysDown[GLFW_KEY_W])
 		{
-
+			activeCamera.move(Direction::FORWARD, deltaTime * cameraSpeed);
 		}
 		if (io.KeysDown[GLFW_KEY_S])
 		{
-
+			activeCamera.move(Direction::BACKWARD, deltaTime * cameraSpeed);
 		}
 		if (io.KeysDown[GLFW_KEY_A])
 		{
-
+			activeCamera.move(Direction::LEFT, deltaTime * cameraSpeed);
 		}
 		if(io.KeysDown[GLFW_KEY_D])
 		{
-
+			activeCamera.move(Direction::RIGHT, deltaTime * cameraSpeed);
+		}
+		if (io.KeysDown[GLFW_KEY_ESCAPE])
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
 	}
 
@@ -189,10 +235,7 @@ void RenderFrame(GLFWwindow* window, Scene& scene, Renderer& renderer, ImGuiIO& 
 		}
 	}
 
-	// renderer.ClearColorBuffer(clear_color);
-	// renderer.ClearZBuffer(1);
 	renderer.Render(scene);
-	// renderer.SwapBuffers();
 
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwMakeContextCurrent(window);
@@ -224,8 +267,6 @@ void DrawCameraMenu(Camera& c) {
 
 	view_volume v = c.GetViewVolume();
 	float l = v.l, r = v.r, b = v.b, t = v.t, n = v.n, f = v.f;
-	if (ImGui::SliderFloat3("translation", (float*)&c.translation, -5, 5)) c.UpdateViewTrans();
-	if (ImGui::SliderFloat3("rotation", (float*)&c.rotation, 0.0f, 6.28f)) c.UpdateViewTrans();
 
 	if (ImGui::SliderFloat("left", &l, -1, 1)) 		c.SetViewVolume(l, r, b, t, n, f);
 	if (ImGui::SliderFloat("right", &r, -1, 1))		c.SetViewVolume(l, r, b, t, n, f);
@@ -234,6 +275,17 @@ void DrawCameraMenu(Camera& c) {
 	if (ImGui::SliderFloat("near", &n, -1, 1))		c.SetViewVolume(l, r, b, t, n, f);
 	if (ImGui::SliderFloat("far", &f, 0, 100))		c.SetViewVolume(l, r, b, t, n, f);
 	ImGui::End();
+}
+
+void drawPlanetMenu(Planet& p) {
+	ImGui::Begin("planet");
+	int count = 0;
+	for (bool* i = p.activeChunks; count < 20; i++) {
+		ImGui::Checkbox(std::to_string(count).c_str(), i);
+		count++;
+	}
+	ImGui::End();
+
 }
 
 struct Window {
@@ -245,7 +297,8 @@ struct Window {
 
 Window windows[] = {
 		{0, "Info", "CTRL+I", false},
-		{1, "Camera", "CTRL+C", false}
+		{1, "Camera", "CTRL+C", false},
+		{2, "Planet", "", false}
 };
 
 void DrawWindowDropdown(ImGuiIO& io)
@@ -269,6 +322,8 @@ void DrawWindows(ImGuiIO& io, Scene& scene)
 			case 1:
 				DrawCameraMenu(scene.getActiveCamera());
 				break;
+			case 2:
+				drawPlanetMenu(scene.getActivePlanet());
 			default:
 				break;
 			}

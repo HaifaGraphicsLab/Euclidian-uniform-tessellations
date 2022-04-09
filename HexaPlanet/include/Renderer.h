@@ -25,9 +25,6 @@ public:
 
 	glm::vec3 GetBarycentricCoords(const glm::vec2& p, glm::vec3* triangle_v);
 
-	void SwapBuffers();
-	void ClearColorBuffer(const glm::vec3& color);
-	void ClearZBuffer(float depth);
 	int GetViewportWidth() const;
 	int GetViewportHeight() const;
 
@@ -42,10 +39,7 @@ private:
 
 	rectangle GetBoundingRectangle(glm::vec3* tri);
 
-
-	void CreateOpenglBuffer();
 	void InitOpenglRendering();
-
 
 	int viewport_width;
 	int viewport_height;

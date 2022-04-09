@@ -10,32 +10,55 @@ struct view_volume {
 	float f = 10.0f;
 };
 
+enum Direction {
+	UP, DOWN, FORWARD, BACKWARD, LEFT, RIGHT
+};
+
 
 class Camera
 {
 public:
 	Camera();
 	virtual ~Camera();
-	void SetCameraLookAt(const glm::vec3& eye, const glm::vec3& at, const glm::vec3& up);
+	void SetViewVolume(float left, float right);
 	void SetViewVolume(float left, float right, float bottom, float top, float n, float f);
 
 	const view_volume& GetViewVolume();
 	glm::mat4x4 GetInverseTransformation() const;
 	bool IsOrthographic() const;
 	void SetOrthograpic(bool isOrthographic);
+	void move(Direction d, float stride);
 
-	glm::vec3 translation;
-	glm::vec3 rotation;
+	float getYaw() const;
+	float getPitch() const;
+	void setYaw(float yaw);
+	void setPitch(float pitch);
+	float getAspectRatio() const;
+	void setFov(float fov);
+	void setAspectRatio(float aspectRatio);
+	float getFov() const;
 
-	void UpdateProjectionTrans();
-	void UpdateViewTrans();
 	const glm::mat4x4& GetProjectionTransformation() const;
 	const glm::mat4x4& GetViewTransformation() const;
 
 private:
+
+	void UpdateProjectionTrans();
+	void UpdateViewTrans();
+	void UpdateCameraFront();
+	float yaw;
+	float pitch;
+
 	bool orthographic;
+	glm::vec3 translation;
 
 	glm::mat4x4 view_transformation;
 	glm::mat4x4 projection_transformation;
 	view_volume view_vol;
+
+	glm::vec3 cameraFront;
+	glm::vec3 cameraUp;
+
+	float fov;
+	float aspectRatio;
 };

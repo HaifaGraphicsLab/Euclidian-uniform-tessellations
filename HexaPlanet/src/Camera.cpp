@@ -4,14 +4,20 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <GLFW\glfw3.h>
 
-
+#include <iostream>
 
 Camera::Camera() : projection_transformation(glm::mat4x4(1.0f)), view_transformation(glm::mat4x4(1.0f))
 {
+	aspectRatio = 1;
+	cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+	cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 	orthographic = false;
 	translation = glm::vec3(0, 0, 1);
-	rotation = glm::vec3(0);
+	yaw = 0;
+	pitch = 0;
+	setFov(40);
 
+	UpdateCameraFront();
 	UpdateProjectionTrans();
 	UpdateViewTrans();
 }
@@ -21,22 +27,19 @@ Camera::~Camera()
 	
 }
 
-void Camera::SetCameraLookAt(const glm::vec3& eye, const glm::vec3& at, const glm::vec3& up)
+void Camera::SetViewVolume(float near, float far)
 {
-	glm::vec3 zaxis = normalize(at - eye);
-	glm::vec3 xaxis = normalize(cross(zaxis, up));
-	glm::vec3 yaxis = cross(xaxis, zaxis);
+	if (!orthographic) {
+		float halfLength = tan(glm::radians(fov)) * near;
+		SetViewVolume(-halfLength, halfLength, -halfLength * aspectRatio, halfLength * aspectRatio, near, far);
+	}
+	else {
+		std::cout << "Not Implemented" << std::endl;
+	}
 
-	zaxis = zaxis * -1.0f;
-	
-	glm::mat4x4 inverse = {
-		glm::vec4(xaxis, -glm::dot(xaxis,eye)),
-		glm::vec4(xaxis, -glm::dot(yaxis,eye)),
-		glm::vec4(xaxis, -glm::dot(zaxis,eye)),
-		glm::vec4(0,0,0,1),
-	};
-	view_transformation = inverse;
 }
+
+
 
 void Camera::SetViewVolume(float left, float right, float bottom, float top, float n, float f)
 {
@@ -70,6 +73,95 @@ void Camera::SetOrthograpic(bool isOrthographic) {
 	UpdateProjectionTrans();
 }
 
+void Camera::move(Direction d, float stride)
+{
+	glm::vec3 directionVector;
+	switch (d) {
+	case Direction::FORWARD:
+		directionVector = cameraFront;
+		break;
+	case Direction::BACKWARD:
+		directionVector = cameraFront;
+		stride = -stride;
+		break;
+	case Direction::RIGHT:
+		directionVector = glm::normalize(glm::cross(cameraFront, cameraUp));
+		break;
+	case Direction::LEFT:
+		directionVector = glm::normalize(glm::cross(cameraFront, cameraUp));
+		stride = -stride;
+		break;
+	case Direction::UP:
+		directionVector = cameraUp;
+		break;
+	case Direction::DOWN:
+		directionVector = cameraFront;
+		stride = -stride;
+		break;
+	}
+	this->translation += directionVector * stride;
+	UpdateViewTrans();
+}
+
+float Camera::getYaw() const
+{
+
+	return yaw;
+}
+
+float Camera::getPitch() const
+{
+	return pitch;
+}
+
+void Camera::setYaw(float yaw)
+{
+	this->yaw = yaw;
+	UpdateCameraFront();
+}
+
+void Camera::setPitch(float pitch)
+{
+	if (pitch > 89.0f) {
+		this->pitch = 89.0f;
+	}
+	else if (pitch < -89.0f) {
+		this->pitch = -89.0f;
+	}
+	else {
+		this->pitch = pitch;
+	}
+	UpdateCameraFront();
+}
+
+float Camera::getAspectRatio() const
+{
+	return aspectRatio;
+}
+
+void Camera::setFov(float fov)
+{
+	if (fov < 1.0f)
+		this->fov = 1.0f;
+	else if (fov > 60.0f)
+		this->fov = 60.0f;
+	else
+		this->fov = fov;
+	SetViewVolume(0.1, 100);
+}
+
+void Camera::setAspectRatio(float aspectRatio)
+{
+	this->aspectRatio = aspectRatio;
+	SetViewVolume(0.1, 100);
+
+}
+
+float Camera::getFov() const
+{
+	return fov;
+}
+
 const glm::mat4x4& Camera::GetProjectionTransformation() const
 {
 	return projection_transformation;
@@ -98,5 +190,15 @@ void Camera::UpdateProjectionTrans()
 
 void Camera::UpdateViewTrans()
 {
-	view_transformation = glm::inverse(glm::eulerAngleYXZ(rotation[1], rotation[0], rotation[2]) * glm::translate(translation));
+	view_transformation = glm::lookAt(translation, translation + cameraFront, cameraUp);
+}
+
+void Camera::UpdateCameraFront()
+{
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	this->cameraFront = glm::normalize(direction);
+	UpdateViewTrans();
 }

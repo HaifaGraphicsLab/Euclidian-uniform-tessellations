@@ -45,7 +45,7 @@ void Renderer::Render(const Scene& scene)
 {
 	
 	const Camera camera = scene.getActiveCamera();
-	const Planet planet = scene.getActivePlanet();
+	Planet planet = scene.getActivePlanet();
 	shader.use();
 	// -------------- UNIFORMS -----------------
 	glm::mat4 viewTransform = camera.GetViewTransformation();
@@ -95,7 +95,7 @@ void Renderer::Render(const Scene& scene)
 	for (int i = 0; i < 20; i++) {
 		if (planet.isActive(i)) {
 			Chunk* c = planet.getChunk(i);
-			GLuint vao = c->getVAO();
+			GLuint vao = planet.getVAO(i);
 			GLsizei count = c->getNumOfVertices();
 
 			// draw chunk
