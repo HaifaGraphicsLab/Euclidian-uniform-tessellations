@@ -15,6 +15,7 @@ Camera::Camera() : projection_transformation(glm::mat4x4(1.0f)), view_transforma
 	translation = glm::vec3(0, 0, 1);
 	yaw = 0;
 	pitch = 0;
+	renderDistance = 400.0f;
 	setFov(40);
 
 	UpdateCameraFront();
@@ -147,13 +148,13 @@ void Camera::setFov(float fov)
 		this->fov = 60.0f;
 	else
 		this->fov = fov;
-	SetViewVolume(0.1, 100);
+	SetViewVolume(0.1, renderDistance);
 }
 
 void Camera::setAspectRatio(float aspectRatio)
 {
 	this->aspectRatio = aspectRatio;
-	SetViewVolume(0.1, 100);
+	SetViewVolume(0.1, renderDistance);
 
 }
 

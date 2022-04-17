@@ -13,6 +13,7 @@ public:
 	bool activeChunks[20];
 	Voxel getNeighbor(Voxel v, int neighbor) const;
 	ChunkLoc GetChunkLoc(Voxel v) const;
+	glm::vec3 voxelTo3DCoordsNormalized(Voxel v) const;
 	glm::vec3 voxelTo3DCoords(Voxel v) const;
 	GLuint getVAO(int chunk);
 
@@ -39,6 +40,8 @@ private:
 	glm::vec2 gridTo2DCoords(int x, int y) const;
 	glm::vec3 gridToBarycentric(int x, int y, int index) const;
 	glm::vec3 barycentric(glm::vec2 a, glm::vec2 b, glm::vec2 c, glm::vec2 p) const;
-	void renderHex(Voxel v) const;
+	void renderHex(const Voxel& v, GLuint colorIndex) const;
+	void renderPent(const Voxel& v, GLuint colorIndex) const;
+	void renderVox(Voxel v) const;
 	void updateVertexArray(int chunk);
 };

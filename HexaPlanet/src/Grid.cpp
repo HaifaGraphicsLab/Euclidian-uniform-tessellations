@@ -1,16 +1,25 @@
-#include "Grid.h"
 #include <iostream>
 #include <cassert>
+#include "Grid.h"
+
+
 
 #define assertm(exp, msg) assert(((void)msg, exp))
 
 
 
 
-Grid::Grid(int x, int y, int z) : x(x), y(y), z(z){
+Grid::Grid(int x, int y, int z, bool extra) : x(x), y(y), z(z){
 	this->data = new BlockType[x * y * z];
+	this->hasExtra = extra;
 	for (int i = 0; i < x * y * z; i++) {
 		this->data[i] = BlockType::None;
+	}
+	if (hasExtra) {
+		this->extra = new BlockType[z];
+		for (int i = 0; i < z; i++) {
+			this->extra[i] = BlockType::None;
+		}
 	}
 }
 
@@ -21,6 +30,19 @@ BlockType& Grid::operator()(int x, int y, int z) const{
 
 	int loc = z * this->x * this->y + y * this->x + x;
 	return data[loc];
+}
+
+BlockType& Grid::operator()(std::string s, int z) const {
+	assertm((z < this->z) && z >= 0, "Z out of bounds");
+	
+	for (auto& c : s) c = toupper(c);
+	if (s == "EXTRA") {
+		assertm(hasExtra, "grid has no extra");
+		return extra[z];
+	}
+	else {
+		assertm(false, "unknown string");
+	}
 }
 
 int Grid::getX() const{
@@ -43,6 +65,16 @@ void Grid::print() const{
 		std::cout << std::endl << std::endl;
 	}
 }
+
+void Grid::print(std::string s) const
+{
+	for (int i = 0; i < z; i++)
+		std::cout << operator()(s, i) << " ";
+	std::cout << std::endl;
+}
+
+
+
 
 Grid::~Grid() {
 	delete[] data;

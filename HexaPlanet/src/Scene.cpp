@@ -9,7 +9,7 @@ Scene::Scene() :
 	addCamera(c);
 	LightSource* l = new LightSource();
 	addLightSource(l);
-	Planet* p = new Planet(2, 5);
+	Planet* p = new Planet(1, 5);
 	addPlanet(p);
 	//LightSource* l2 = new LightSource();
 

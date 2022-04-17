@@ -48,6 +48,7 @@ private:
 	void UpdateCameraFront();
 	float yaw;
 	float pitch;
+	float renderDistance;
 
 	bool orthographic;
 	glm::vec3 translation;
