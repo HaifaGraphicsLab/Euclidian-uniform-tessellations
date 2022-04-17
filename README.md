@@ -106,10 +106,11 @@ Something I didn't expect at all is that now we can display an even simpler prim
 
 This just demonstrates the strength and generality of the implentation
 
-Additionaly, I optimized the renderimg code in a few places (for example previously I have done 2 calucaulations for every prism - one for the bottom and one for the top, but the calculation are almost identitcal and can be combined) and now it can render huge scenes as follows: 
+Additionaly, I optimized the rendering code in a few places (for example previously I have done 2 calucaulations for every prism - one for the bottom and one for the top, but the calculation are almost identitcal and can be combined) and now it can render huge scenes as follows: 
 
 ![](MDAssets/optim1.PNG)
 
+There are still optimizations to be done, until next time ;)
 
 **Total Time** ~5 hours
 
