@@ -92,7 +92,7 @@ Turns out the system falters with a small size (I want it to support any size - 
 
 ![](MDAssets/badFootball.PNG)
 
-The reason for this is because I thought I could get away with only to pentagons - one at the top and at the bottom. However that is not the case. There should be 12 pentagons - It is obvious when I delete the bad voxels in the previous example:
+The reason for this is because I thought I could get away with only two pentagons - one at the top and at the bottom. However that is not the case. There should be 12 pentagons - It is obvious when I delete the bad voxels in the previous example:
 
 ![](MDAssets/goodFootball.PNG)
 
