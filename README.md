@@ -84,16 +84,34 @@ Yay!! Finally something that looks correct. Turning the hexagons into a prism is
 ![](MDAssets/entirePlanet.PNG)
 
 One thing I didn't metion is that I implemented simple ambient occlusion - i.e. I darken the sides of the prisms to create the effect of shading. 
+
 **Total Time** ~20 hours
 
-### Next Week 
+### 16/4 
 Turns out the system falters with a small size (I want it to support any size - even a simple decoahdron). Here is what it looks like:
 
 ![](MDAssets/badFootball.PNG)
 
-The reason for this is because I thought I could get away with only to hexagons - one at the top and at the bottom. However that is not the case. There should be 12 hexagons - It is obvious when I delete the bad voxels in the previous example:
+The reason for this is because I thought I could get away with only to pentagons - one at the top and at the bottom. However that is not the case. There should be 12 pentagons - It is obvious when I delete the bad voxels in the previous example:
 
 ![](MDAssets/goodFootball.PNG)
+
+So next I implemented the pentaprism system which was a big headache but I'm glad its done. Each pentaprism is comprised of 16 faces - 3 for the top, 3 for the bottom, and 2 for each side. Here is what the previous image looks like with the pentagon voxels:
+
+![](MDAssets/evenBetterFootball.PNG)
+
+Something I didn't expect at all is that now we can display an even simpler primitive - A dodecahedron!
+
+![](MDAssets/Primitive.PNG)
+
+This just demonstrates the strength and generality of the implentation
+
+Additionaly, I optimized the renderimg code in a few places (for example previously I have done 2 calucaulations for every prism - one for the bottom and one for the top, but the calculation are almost identitcal and can be combined) and now it can render huge scenes as follows: 
+
+![](MDAssets/optim1.PNG)
+
+
+**Total Time** ~5 hours
 
 
 
