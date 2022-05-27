@@ -12,10 +12,11 @@ Camera::Camera() : projection_transformation(glm::mat4x4(1.0f)), view_transforma
 	cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 	cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 	orthographic = false;
-	translation = glm::vec3(0, 0, 1);
+	translation = glm::vec3(0, 0, 0);
 	yaw = 0;
 	pitch = 0;
 	renderDistance = 400.0f;
+	m_pole = glm::vec3(0, 0, 1);
 	setFov(40);
 
 	UpdateCameraFront();
@@ -40,6 +41,9 @@ void Camera::SetViewVolume(float near, float far)
 
 }
 
+glm::vec3 Camera::GetTranslation() const {
+	return translation;
+}
 
 
 void Camera::SetViewVolume(float left, float right, float bottom, float top, float n, float f)
@@ -101,18 +105,24 @@ void Camera::move(Direction d, float stride)
 		break;
 	}
 	this->translation += directionVector * stride;
-	UpdateViewTrans();
+	UpdateCameraFront();
+	// UpdateViewTrans();
 }
 
 float Camera::getYaw() const
 {
-
 	return yaw;
 }
 
 float Camera::getPitch() const
 {
 	return pitch;
+}
+
+void Camera::setPosition(glm::vec3 pos)
+{
+	this->translation = pos;
+	UpdateViewTrans();
 }
 
 void Camera::setYaw(float yaw)
@@ -151,6 +161,30 @@ void Camera::setFov(float fov)
 	SetViewVolume(0.1, renderDistance);
 }
 
+void Camera::setCameraUp(glm::vec3 up)
+{
+	cameraUp = up;
+	UpdateCameraFront();
+}
+glm::vec3 Camera::getCameraUp() const
+{
+	return cameraUp;
+}
+
+glm::vec3 Camera::getPole() const
+{
+	return m_pole;
+}
+
+void Camera::setCameraFront(glm::vec3 front)
+{
+	cameraFront = front;
+	UpdateViewTrans();
+}
+glm::vec3 Camera::getCameraFront() const
+{
+	return cameraFront;
+}
 void Camera::setAspectRatio(float aspectRatio)
 {
 	this->aspectRatio = aspectRatio;
@@ -197,9 +231,53 @@ void Camera::UpdateViewTrans()
 void Camera::UpdateCameraFront()
 {
 	glm::vec3 direction;
-	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	direction.y = sin(glm::radians(pitch));
-	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
+
+	glm::quat world_axes_rotation = glm::angleAxis(-yaw/180.0f*3.1415926f, glm::vec3(0.0f, 1.0f, 0.0f));
+	world_axes_rotation = glm::normalize(world_axes_rotation);
+	world_axes_rotation = glm::rotate(world_axes_rotation, pitch / 180.0f * 3.1415926f, glm::vec3(1.0f, 0.0f, 0.0f));
+
+	glm::vec3 new_pole = (m_pole - glm::dot(cameraUp, m_pole) * cameraUp);
+	if (glm::length(new_pole) != 0)
+		m_pole = glm::normalize(new_pole);
+
+	glm::mat4 local_transform;
+
+	local_transform[0] = glm::vec4(m_pole.x, m_pole.y, m_pole.z, 0.0f);
+	local_transform[1] = glm::vec4(cameraUp.x, cameraUp.y, cameraUp.z, 0.0f);
+	glm::vec3 tmp = glm::cross(m_pole, cameraUp);
+	local_transform[2] = glm::vec4(tmp.x, tmp.y, tmp.z, 0.0f);
+	local_transform[3] = glm::vec4(translation.x, translation.y, translation.z, 1.0f);
+
+	world_axes_rotation = glm::normalize(world_axes_rotation);
+	glm::mat4 view = local_transform * glm::mat4_cast(world_axes_rotation);
+	direction = -1.0f * glm::vec3(view[2]);
+	//m_up = glm::vec3(m_view[1]);
+	//m_right = glm::vec3(m_view[0]);
+
+	//m_view = glm::inverse(m_view);
+
+
+
+
+	//glm::vec3 a = glm::vec3(0, 1, 0);
+	//glm::vec3 b = cameraUp;
+
+	//glm::vec3 v = glm::cross(b, a);
+	//float angle = acos(glm::dot(b, a) / (glm::length(b) * glm::length(a)));
+	//glm::mat4 rotmat = glm::rotate(angle, v);
+
+
+	//direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	//direction.y = sin(glm::radians(pitch));
+	//direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	
+	//if (angle != 0)
+	//	direction = glm::vec4(direction, 0) * rotmat;
+
+	//glm::mat4 r = glm::eulerAngleYXZ(-yaw/180.0f*3.14f, pitch / 180.0f * 3.14f, 0.0f);
+	//direction = glm::vec3(r * glm::vec4(cameraUp, 0));
+	
 	this->cameraFront = glm::normalize(direction);
 	UpdateViewTrans();
 }

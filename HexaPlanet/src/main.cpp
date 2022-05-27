@@ -19,6 +19,7 @@
  */
 
 glm::vec4 clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 1.00f);
+bool cursorMode = true;
 int windowWidth = 1280, windowHeight = 720;
 
 float lastFrame = 0.0f;
@@ -54,16 +55,18 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 		lastMouseY = ypos;
 		firstMouse = false;
 	}
+	if (cursorMode) {
+		float xOffset = xpos - lastMouseX;
+		float yOffset = lastMouseY - ypos;
 
-	float xOffset = xpos - lastMouseX;
-	float yOffset = lastMouseY - ypos;
+		lastMouseX = xpos;
+		lastMouseY = ypos;
 
-	lastMouseX = xpos;
-	lastMouseY = ypos;
+		float senstivity = 0.1f;
+		s->getActiveCamera().setYaw(s->getActiveCamera().getYaw() + xOffset * senstivity);
+		s->getActiveCamera().setPitch(s->getActiveCamera().getPitch() + yOffset * senstivity);
+	}
 
-	float senstivity = 0.1f;
-	s->getActiveCamera().setYaw(s->getActiveCamera().getYaw() + xOffset * senstivity);
-	s->getActiveCamera().setPitch(s->getActiveCamera().getPitch() + yOffset * senstivity);
 }
 
 
@@ -160,6 +163,7 @@ void StartFrame()
 
 void RenderFrame(GLFWwindow* window, Scene& scene, Renderer& renderer, ImGuiIO& io)
 {
+
 	ImGui::Render();
 	int frameBufferWidth, frameBufferHeight;
 	glfwMakeContextCurrent(window);
@@ -174,11 +178,12 @@ void RenderFrame(GLFWwindow* window, Scene& scene, Renderer& renderer, ImGuiIO& 
 	}
 
 	Camera& activeCamera = scene.getActiveCamera();
+	Player& activePlayer = scene.getActivePlayer();
 
 	if ((float)frameBufferHeight / frameBufferWidth != activeCamera.getAspectRatio()) {
 		activeCamera.setAspectRatio((float)frameBufferHeight / frameBufferWidth);
 	}
-	float cameraSpeed = 10.0f;
+	float cameraSpeed = activePlayer.getSpeed();
 
 	//calculate delta time
 	float currentFrame = glfwGetTime();
@@ -206,23 +211,30 @@ void RenderFrame(GLFWwindow* window, Scene& scene, Renderer& renderer, ImGuiIO& 
 		}
 		if (io.KeysDown[GLFW_KEY_W])
 		{
-			activeCamera.move(Direction::FORWARD, deltaTime * cameraSpeed);
+			activePlayer.move(Direction::FORWARD, deltaTime * cameraSpeed);
 		}
 		if (io.KeysDown[GLFW_KEY_S])
 		{
-			activeCamera.move(Direction::BACKWARD, deltaTime * cameraSpeed);
+			activePlayer.move(Direction::BACKWARD, deltaTime * cameraSpeed);
+
 		}
 		if (io.KeysDown[GLFW_KEY_A])
 		{
-			activeCamera.move(Direction::LEFT, deltaTime * cameraSpeed);
+			activePlayer.move(Direction::LEFT, deltaTime * cameraSpeed);
+			
 		}
 		if(io.KeysDown[GLFW_KEY_D])
 		{
-			activeCamera.move(Direction::RIGHT, deltaTime * cameraSpeed);
+			activePlayer.move(Direction::RIGHT, deltaTime * cameraSpeed);
+
+		}
+		if (io.KeysDown[GLFW_KEY_SPACE]) {
+			activePlayer.move(Direction::JUMP, deltaTime * activePlayer.getJumpForce());
 		}
 		if (io.KeysDown[GLFW_KEY_ESCAPE])
 		{
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			cursorMode = false;
 		}
 	}
 
@@ -232,8 +244,18 @@ void RenderFrame(GLFWwindow* window, Scene& scene, Renderer& renderer, ImGuiIO& 
 		if (io.MouseDown[0])
 		{
 			// Left mouse button is down
+			if (!cursorMode) {
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				cursorMode = true;
+				firstMouse = true;
+			}
+
+
 		}
 	}
+	// activePlayer.UpdateCameraUp();
+	activePlayer.UpdatePos(deltaTime);
+
 
 	renderer.Render(scene);
 
@@ -255,12 +277,31 @@ void Cleanup(GLFWwindow* window)
 void DrawInfoMenu() {
 	ImGui::Begin("Fps");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
 	ImGui::End();
 }
 
 void DrawCameraMenu(Camera& c) {
 	bool hasChanged = false;
 	ImGui::Begin("camera");
+	Voxel voxel = s->getActivePlanet().getVoxel(c.GetTranslation());
+	ImGui::Text("Root: %d, x:%d, y:%d, z:%d", voxel.grid, voxel.x, voxel.y, voxel.z);
+
+	float pitch = c.getPitch();
+	float yaw = c.getYaw();
+	ImGui::Text("Pitch: %f, Yaw: %f", pitch, yaw);
+	glm::vec3 up = c.getCameraUp();
+	ImGui::Text("Up: %f, %f, %f", up.x, up.y, up.z);
+	glm::vec3 front = c.getCameraFront();
+	ImGui::Text("Front: %f, %f, %f", front.x, front.y, front.z);
+
+	glm::vec3 pos = c.GetTranslation();
+	ImGui::Text("Position: %f, %f, %f", pos.x, pos.y, pos.z);
+
+	glm::vec3 pole = c.getPole();
+	ImGui::Text("Pole: %f, %f, %f", pole.x, pole.y, pole.z);
+
+
 	bool ortho = c.IsOrthographic();
 	ImGui::Checkbox("Orthographic", &ortho);
 	c.SetOrthograpic(ortho);
@@ -279,6 +320,15 @@ void DrawCameraMenu(Camera& c) {
 
 void drawPlanetMenu(Planet& p) {
 	ImGui::Begin("planet");
+	
+	glm::vec3 center = p.getCenter();
+	if (ImGui::SliderFloat3("Center", (float*)&center, -100, 100)) p.setCenter(center);
+	float baseHeight = p.getBaseHeight();
+	if (ImGui::SliderFloat("Base Height", (float*)&baseHeight, 0, 20)) p.setBaseHeight(baseHeight);
+	float voxelHeight = p.getVoxelHeight();
+	if (ImGui::SliderFloat("Voxel Height", (float*)&voxelHeight, 0, 20)) p.setVoxelHeight(voxelHeight);
+
+
 	int count = 0;
 	for (bool* i = p.activeChunks; count < 20; i++) {
 		ImGui::Checkbox(std::to_string(count).c_str(), i);
@@ -286,6 +336,31 @@ void drawPlanetMenu(Planet& p) {
 	}
 	ImGui::End();
 
+}
+
+void drawPlayerMenu(Player& player) {
+	ImGui::Begin("player");
+
+	glm::vec3 velocity = player.getVelocity();
+	ImGui::Text("Velocity: %f, %f, %f", velocity.x, velocity.y, velocity.z);
+
+	bool onGround = player.isOnGround();
+	if (onGround) {
+		ImGui::Text("On ground");
+	}
+	else {
+		ImGui::Text("Not on ground");
+
+	}
+
+	float jumpForce = player.getJumpForce();
+	if (ImGui::SliderFloat("Jump Force", (float*)&jumpForce, 0, 20)) player.setJumpForce(jumpForce);
+	float mass = player.getMass();
+	if (ImGui::SliderFloat("Mass", (float*)&mass, 0, 20)) player.setMass(mass);
+
+	float speed = player.getSpeed();
+	if (ImGui::SliderFloat("Speed", (float*)&speed, 0, 20)) player.setSpeed(speed);
+	ImGui::End();
 }
 
 struct Window {
@@ -298,7 +373,8 @@ struct Window {
 Window windows[] = {
 		{0, "Info", "CTRL+I", false},
 		{1, "Camera", "CTRL+C", false},
-		{2, "Planet", "", false}
+		{2, "Planet", "", false},
+		{3, "Player", "", false}
 };
 
 void DrawWindowDropdown(ImGuiIO& io)
@@ -324,6 +400,10 @@ void DrawWindows(ImGuiIO& io, Scene& scene)
 				break;
 			case 2:
 				drawPlanetMenu(scene.getActivePlanet());
+				break;
+			case 3:
+				drawPlayerMenu(scene.getActivePlayer());
+				break;
 			default:
 				break;
 			}

@@ -11,7 +11,7 @@ struct view_volume {
 };
 
 enum Direction {
-	UP, DOWN, FORWARD, BACKWARD, LEFT, RIGHT
+	UP, DOWN, FORWARD, BACKWARD, LEFT, RIGHT, JUMP
 };
 
 
@@ -21,6 +21,7 @@ public:
 	Camera();
 	virtual ~Camera();
 	void SetViewVolume(float left, float right);
+	glm::vec3 GetTranslation() const;
 	void SetViewVolume(float left, float right, float bottom, float top, float n, float f);
 
 	const view_volume& GetViewVolume();
@@ -31,10 +32,20 @@ public:
 
 	float getYaw() const;
 	float getPitch() const;
+	void setPosition(glm::vec3 pos);
 	void setYaw(float yaw);
 	void setPitch(float pitch);
 	float getAspectRatio() const;
 	void setFov(float fov);
+	void setCameraUp(glm::vec3 up);
+
+	glm::vec3 getCameraUp() const;
+	glm::vec3 getPole() const;
+
+
+	void setCameraFront(glm::vec3 front);
+
+	glm::vec3 getCameraFront() const;
 	void setAspectRatio(float aspectRatio);
 	float getFov() const;
 
@@ -60,6 +71,7 @@ private:
 	glm::vec3 cameraFront;
 	glm::vec3 cameraUp;
 
+	glm::vec3 m_pole;
 	float fov;
 	float aspectRatio;
 };

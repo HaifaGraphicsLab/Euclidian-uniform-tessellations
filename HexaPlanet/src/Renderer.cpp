@@ -46,6 +46,7 @@ void Renderer::Render(const Scene& scene)
 	
 	const Camera camera = scene.getActiveCamera();
 	Planet planet = scene.getActivePlanet();
+	Player player = scene.getActivePlayer();
 	shader.use();
 	// -------------- UNIFORMS -----------------
 	glm::mat4 viewTransform = camera.GetViewTransformation();
@@ -106,6 +107,13 @@ void Renderer::Render(const Scene& scene)
 
 	}
 
+	GLuint vao = player.getVAO();
+	GLsizei count = player.getNumOfVertices();
+
+	// draw chunk
+	glBindVertexArray(vao);
+	glDrawArrays(GL_TRIANGLES, 0, count);
+	glBindVertexArray(0);
 }
 void Renderer::LoadTextures(std::string name)
 {

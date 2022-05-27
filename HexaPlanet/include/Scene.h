@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "LightSource.h"
 #include "Planet.h"
+#include <Player.h>
 
 using namespace std;
 
@@ -27,6 +28,11 @@ public:
 	Camera& getCamera(int index);
 	Camera& getActiveCamera() const;
 
+	void addPlayer(Player* player);
+	int getPlayerCount() const;
+	Player& getPlayer(int index);
+	Player& getActivePlayer() const;
+
 	void setActiveCameraIndex(int index);
 	int getActiveCameraIndex() const;
 
@@ -36,8 +42,10 @@ public:
 private:
 	vector<Planet *> planets;
 	vector<Camera *> cameras;
+	vector<Player*> players;
 	vector<LightSource *> lightSources;
 
 	int activeCameraIndex;
 	int activePlanetIndex;
+	int activePlayerIndex;
 };
