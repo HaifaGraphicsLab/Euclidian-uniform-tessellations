@@ -19,7 +19,7 @@ public:
 	float getBaseHeight() const;
 	float getVoxelHeight() const;
 	Chunk* getChunk(int chunk) const;
-	Voxel getVoxel(glm::vec3 pos) const;
+	Voxel getVoxel(const glm::vec3 pos, float* f = NULL, float* q = NULL) const;
 	bool isActive(int chunk) const;
 	bool activeChunks[20];
 	Voxel getNeighbor(Voxel v, int neighbor) const;
@@ -32,9 +32,14 @@ public:
 	BlockType getVoxelBlockType(Voxel v) const;
 	bool isValidVoxel(Voxel v) const;
 
+	Grid* getGrid(int i) const;
+	Grid* const* getGrid() const;
+	void setGrid(int i, Grid* g);
+
 
 
 private:
+	friend class TerrainStorage;
 	float gravity;
 
 

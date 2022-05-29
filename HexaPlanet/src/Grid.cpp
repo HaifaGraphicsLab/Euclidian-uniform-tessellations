@@ -54,6 +54,10 @@ int Grid::getY() const {
 int Grid::getZ() const {
 	return z;
 }
+BlockType* Grid::getData() const
+{
+	return data;
+}
 void Grid::print() const{
 	for (int i = 0; i < z; i++) {
 		for (int j = 0; j < y; j++) {

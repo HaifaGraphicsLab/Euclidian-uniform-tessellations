@@ -17,6 +17,7 @@ public:
 	int getX() const;
 	int getY() const;
 	int getZ() const;
+	BlockType* getData() const;
 	void print() const;
 	void print(std::string s) const;
 	~Grid();

@@ -173,6 +173,18 @@ glm::vec3 Player::getVelocity() const
 	return velocity;
 }
 
+void Player::setThirdPerson(bool thirdPerson)
+{
+	this->thirdPerson = thirdPerson;
+}
+
+bool Player::isThirdPerson()
+{
+	return thirdPerson;
+}
+
+
+
 float Player::getSpeed() const
 {
 	return speed;
@@ -207,9 +219,12 @@ void Player::UpdateCameraUp()
 
 void Player::UpdateCameraPos()
 {
-	// camera->setPosition(pos + camera->getCameraUp()*height);
-	camera->setPosition(pos- camera->getCameraFront() * 5.0f);
-
+	if (this->thirdPerson) {
+		camera->setPosition(pos - camera->getCameraFront() * 5.0f);
+	}
+	else {
+		camera->setPosition(pos + camera->getCameraUp() * height);
+	}
 }
 
 void Player::UpdateCamera()

@@ -39,7 +39,7 @@ Planet::Planet(int size, int maxHeight) : size(size), maxHeight(maxHeight)
 	for (int i = 0; i < 5; i++) {
 		for (int x = 0; x < 2 * size; x++) {
 			for (int y = 0; y < size; y++) {
-				for (int h = 1; h < y; h++) {
+				for (int h = 1; h < 2; h++) {
 					int t = rand() % 3;
 					// (*grid[i])(x, y, y/5) = BlockType::red;
 
@@ -599,6 +599,22 @@ bool Planet::isValidVoxel(Voxel v) const
 	return true;
 }
 
+Grid* Planet::getGrid(int i) const
+{
+	return grid[i];
+}
+
+Grid* const* Planet::getGrid() const
+{
+	return grid;
+}
+
+void Planet::setGrid(int i, Grid* g)
+{
+	delete this->grid[i];
+	this->grid[i] = g;
+}
+
 BlockType Planet::getVoxelBlockType(Voxel v) const
 {
 	BlockType c;
@@ -685,7 +701,7 @@ void Planet::renderVox(Voxel v) const
 
 }
 
-Voxel Planet::getVoxel(glm::vec3 pos) const 
+Voxel Planet::getVoxel(const glm::vec3 pos, float* qPtr, float* rPtr) const
 {
 	int inChunk;
 	ChunkBorder b;
@@ -706,12 +722,13 @@ Voxel Planet::getVoxel(glm::vec3 pos) const
 	int rgrid = std::round(r);
 	q -= qgrid; // remainder
 	r -= rgrid;
-	if (std::abs(q) >= std::abs(r)) {
-		rgrid += std::round(q + 0.5 * r);
-	}
-	else {
-		qgrid += std::round(r + 0.5 * q);
-	}
+
+	//if (std::abs(q) >= std::abs(r)) {
+	//	rgrid += std::round(q + 0.5 * r);
+	//}
+	//else {
+	//	qgrid += std::round(r + 0.5 * q);
+	//}
 
 	Voxel v;
 	v.grid = loc.chunckRoot;
@@ -728,6 +745,13 @@ Voxel Planet::getVoxel(glm::vec3 pos) const
 	// placeVoxel(v, BlockType::black);
 
 	v.z = inverseHeightFunc(glm::length(pos - center));
+
+	if (qPtr) {
+		*qPtr = q;
+	}
+	if (rPtr) {
+		*rPtr = r;
+	}
 	return v;
 
 }

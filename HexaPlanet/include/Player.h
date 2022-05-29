@@ -20,6 +20,8 @@ public:
 	void setMass(float mass);
 	void setSpeed(float speed);
 	glm::vec3 getVelocity() const;
+	void setThirdPerson(bool thirdPerson);
+	bool isThirdPerson();
 	float getSpeed() const;
 	float getJumpForce() const;
 	float getMass() const;
@@ -45,16 +47,15 @@ private:
 	glm::vec3 frontVector;
 	glm::vec3 boundaries[8];
 
-
 	PlayerMode mode;
 	float height;
 	float width;
 
 	glm::vec3 velocity;
 
-
 	std::vector<Vertex> vertexArray;
 	GLuint vbo;
 	GLuint vao;
 
+	bool thirdPerson;
 };

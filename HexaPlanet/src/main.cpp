@@ -1,4 +1,5 @@
 #define _USE_MATH_DEFINES
+#define MAX_SIZE 100
 #include <cmath>
 #include <imgui/imgui.h>
 #include <stdio.h>
@@ -13,7 +14,7 @@
 #include "Scene.h"
 #include "Utils.h"
 #include <iostream>
-
+#include "TerrainStorage.h"
 /**
  * Fields
  */
@@ -284,8 +285,10 @@ void DrawInfoMenu() {
 void DrawCameraMenu(Camera& c) {
 	bool hasChanged = false;
 	ImGui::Begin("camera");
-	Voxel voxel = s->getActivePlanet().getVoxel(c.GetTranslation());
+	float voxelQ, voxelR;
+	Voxel voxel = s->getActivePlanet().getVoxel(c.GetTranslation(), &voxelQ, &voxelR);
 	ImGui::Text("Root: %d, x:%d, y:%d, z:%d", voxel.grid, voxel.x, voxel.y, voxel.z);
+	ImGui::Text("q:%f, r:%f", voxelQ, voxelR);
 
 	float pitch = c.getPitch();
 	float yaw = c.getYaw();
@@ -320,7 +323,36 @@ void DrawCameraMenu(Camera& c) {
 
 void drawPlanetMenu(Planet& p) {
 	ImGui::Begin("planet");
-	
+	static int activeLoad = -1;
+	static char s[10];
+
+	std::vector<std::string> t = TerrainStorage::getSavedTerrainNames();
+	int numOfTerrains = t.size();
+	const char* terrains[MAX_SIZE];
+	for (int i = 0; i < numOfTerrains; i++) {
+		terrains[i] = t[i].c_str();
+	}
+
+	ImGui::ListBox("Terrain", &activeLoad, terrains, numOfTerrains);
+	if (ImGui::Button("Load")) {
+		if (activeLoad >= 0) {
+			TerrainStorage::loadTerrain(&p, t[activeLoad]);
+
+		}
+	}
+	ImGui::SameLine(50);
+	if (ImGui::Button("Delete")) {
+		if (activeLoad >= 0) {
+			TerrainStorage::deleteTerrain(t[activeLoad]);
+		}
+	}
+	if (ImGui::Button("Save")) {
+		TerrainStorage::saveTerrain(p.getGrid(), s);
+	}
+	ImGui::SameLine(50);
+	ImGui::InputText("Terrain Name", s, 10);
+
+
 	glm::vec3 center = p.getCenter();
 	if (ImGui::SliderFloat3("Center", (float*)&center, -100, 100)) p.setCenter(center);
 	float baseHeight = p.getBaseHeight();
@@ -356,10 +388,13 @@ void drawPlayerMenu(Player& player) {
 	float jumpForce = player.getJumpForce();
 	if (ImGui::SliderFloat("Jump Force", (float*)&jumpForce, 0, 20)) player.setJumpForce(jumpForce);
 	float mass = player.getMass();
-	if (ImGui::SliderFloat("Mass", (float*)&mass, 0, 20)) player.setMass(mass);
+	if (ImGui::SliderFloat("Mass", (float*)&mass, 0.01, 20)) player.setMass(mass);
 
 	float speed = player.getSpeed();
 	if (ImGui::SliderFloat("Speed", (float*)&speed, 0, 20)) player.setSpeed(speed);
+
+	bool thirdPerson = player.isThirdPerson();
+	if (ImGui::Checkbox("Third Person", &thirdPerson)) player.setThirdPerson(thirdPerson);
 	ImGui::End();
 }
 
