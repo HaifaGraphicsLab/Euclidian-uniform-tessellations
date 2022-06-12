@@ -36,6 +36,7 @@ public:
 	Grid* const* getGrid() const;
 	void setGrid(int i, Grid* g);
 
+	void renderVox(Voxel v, std::vector<Vertex>* vertexArray=NULL, bool* isPent=NULL) const;
 
 
 private:
@@ -75,8 +76,7 @@ private:
 	glm::vec3 gridToBarycentric(int x, int y, int index) const;
 	glm::vec3 barycentric(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c, const glm::vec2& p) const;
 	bool barycentric(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& p, glm::vec3& res) const;
-	void renderHex(const Voxel& v, GLuint colorIndex) const;
-	void renderPent(const Voxel& v, GLuint colorIndex) const;
-	void renderVox(Voxel v) const;
+	void renderHex(const Voxel& v, GLuint colorIndex, std::vector<Vertex>* vertexArray) const;
+	void renderPent(const Voxel& v, GLuint colorIndex, std::vector<Vertex>* vertexArray) const;
 	void updateVertexArray(int chunk);
 };

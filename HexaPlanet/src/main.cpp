@@ -360,6 +360,9 @@ void drawPlanetMenu(Planet& p) {
 	float voxelHeight = p.getVoxelHeight();
 	if (ImGui::SliderFloat("Voxel Height", (float*)&voxelHeight, 0, 20)) p.setVoxelHeight(voxelHeight);
 
+	float gravity = p.getGravity();
+	if (ImGui::SliderFloat("Gravity", (float*)&gravity, 0, 30)) p.setGravity(gravity);
+
 
 	int count = 0;
 	for (bool* i = p.activeChunks; count < 20; i++) {
@@ -392,9 +395,14 @@ void drawPlayerMenu(Player& player) {
 
 	float speed = player.getSpeed();
 	if (ImGui::SliderFloat("Speed", (float*)&speed, 0, 20)) player.setSpeed(speed);
-
+	bool jetPack = player.hasJetpack();
+	if (ImGui::Checkbox("Jetpack", &jetPack)) player.setJetpack(jetPack);
 	bool thirdPerson = player.isThirdPerson();
 	if (ImGui::Checkbox("Third Person", &thirdPerson)) player.setThirdPerson(thirdPerson);
+	bool flying = player.getMode() == PlayerMode::FLYING;
+	if (ImGui::Checkbox("Creative Mode", &flying)) player.setMode(flying ? PlayerMode::FLYING : PlayerMode::WALKING);
+
+
 	ImGui::End();
 }
 

@@ -24,8 +24,12 @@ public:
 	bool isThirdPerson();
 	float getSpeed() const;
 	float getJumpForce() const;
+	bool hasJetpack() const;
+	void setJetpack(bool b);
 	float getMass() const;
 	bool isOnGround() const;
+	PlayerMode getMode() const;
+	void setMode(PlayerMode m);
 
 	GLuint getVAO();
 	GLuint getVBO();
@@ -34,7 +38,14 @@ public:
 
 private:
 	int boundaryCollision(glm::vec3* boundaries, int length);
+	void getNeighborTriangles(std::vector<Vertex>* vertexArray) const;
+	//bool collided(glm::vec3 stride, glm::vec3* outNewPos);
 	int lowerBoundaryCollision(const glm::vec3& pos);
+	glm::vec3 closestPointOnTriangle(glm::vec3* tri, const glm::vec3& p) const;
+	bool collided(const glm::vec3& sphereCenter, std::vector<glm::vec3>& n) const;
+	bool triangleCollided(const glm::vec3& sphereCenter, glm::vec3* tri, glm::vec3* n = NULL) const;
+	//bool collided(const glm::vec3& sphereCenter, const glm::vec3& vel, glm::vec3* tri, glm::vec3* outSphereCenter);
+	void move2(Direction d, float stride);
 	void UpdateBoundaries();
 	Camera* camera;
 	Planet* activePlanet;
@@ -42,10 +53,13 @@ private:
 	float mass;
 	float speed;
 	bool onGround;
+	bool jetpack;
 	glm::vec3 pos;
 	glm::vec3 rightVector;
 	glm::vec3 frontVector;
 	glm::vec3 boundaries[8];
+	glm::mat3 sphereToElipse;
+	glm::mat3 elipseToSphere;
 
 	PlayerMode mode;
 	float height;

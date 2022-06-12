@@ -106,14 +106,15 @@ void Renderer::Render(const Scene& scene)
 		}
 
 	}
+	if (player.isThirdPerson()) {
+		GLuint vao = player.getVAO();
+		GLsizei count = player.getNumOfVertices();
 
-	GLuint vao = player.getVAO();
-	GLsizei count = player.getNumOfVertices();
-
-	// draw chunk
-	glBindVertexArray(vao);
-	glDrawArrays(GL_TRIANGLES, 0, count);
-	glBindVertexArray(0);
+		// draw chunk
+		glBindVertexArray(vao);
+		glDrawArrays(GL_TRIANGLES, 0, count);
+		glBindVertexArray(0);
+	}
 }
 void Renderer::LoadTextures(std::string name)
 {

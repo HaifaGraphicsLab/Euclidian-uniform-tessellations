@@ -428,10 +428,9 @@ bool Planet::barycentric(const glm::vec3& a, const glm::vec3& b, const glm::vec3
 }
 
 
-void Planet::renderHex(const Voxel& v, GLuint colorIndex) const
+void Planet::renderHex(const Voxel& v, GLuint colorIndex, std::vector<Vertex>* vertexArray) const
 {
-	ChunkLoc c = GetChunkLoc(v);
-	int chunkIndex = c.index * 5 + c.chunckRoot;
+	vertexArray->reserve(18);
 
 	Vertex vertices[12];
 	bool neighborsSolid[8]; // 0-4 sides, 5-down, 6-up
@@ -470,16 +469,16 @@ void Planet::renderHex(const Voxel& v, GLuint colorIndex) const
 
 	if (!neighborsSolid[6]) {
 		for (int i = 0; i < 4; i++) {
-			chunks[chunkIndex]->vertexArray.push_back(vertices[lowerVertexIndices[i][0]]);
-			chunks[chunkIndex]->vertexArray.push_back(vertices[lowerVertexIndices[i][1]]);
-			chunks[chunkIndex]->vertexArray.push_back(vertices[lowerVertexIndices[i][2]]);
+			vertexArray->push_back(vertices[lowerVertexIndices[i][0]]);
+			vertexArray->push_back(vertices[lowerVertexIndices[i][1]]);
+			vertexArray->push_back(vertices[lowerVertexIndices[i][2]]);
 		}
 	}
 	if (!neighborsSolid[7]) {
 		for (int i = 0; i < 4; i++) {
-			chunks[chunkIndex]->vertexArray.push_back(vertices[lowerVertexIndices[i][0] + 6]);
-			chunks[chunkIndex]->vertexArray.push_back(vertices[lowerVertexIndices[i][1] + 6]);
-			chunks[chunkIndex]->vertexArray.push_back(vertices[lowerVertexIndices[i][2] + 6]);
+			vertexArray->push_back(vertices[lowerVertexIndices[i][0] + 6]);
+			vertexArray->push_back(vertices[lowerVertexIndices[i][1] + 6]);
+			vertexArray->push_back(vertices[lowerVertexIndices[i][2] + 6]);
 		}
 	}
 
@@ -487,27 +486,25 @@ void Planet::renderHex(const Voxel& v, GLuint colorIndex) const
 		if (!neighborsSolid[(i + 1) % 6]) {
 
 			// triangle 1 of side i
-			chunks[chunkIndex]->vertexArray.push_back(vertices[i]);
-			chunks[chunkIndex]->vertexArray.back().ambientOcclusion = 1;
-			chunks[chunkIndex]->vertexArray.push_back(vertices[(i + 1) % 6]);
-			chunks[chunkIndex]->vertexArray.back().ambientOcclusion = 1;
-			chunks[chunkIndex]->vertexArray.push_back(vertices[i + 6]);
-			chunks[chunkIndex]->vertexArray.back().ambientOcclusion = 1;
+			vertexArray->push_back(vertices[i]);
+			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->push_back(vertices[(i + 1) % 6]);
+			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->push_back(vertices[i + 6]);
+			vertexArray->back().ambientOcclusion = 1;
 			// triangle 2 of side i
-			chunks[chunkIndex]->vertexArray.push_back(vertices[(i + 1) % 6]);
-			chunks[chunkIndex]->vertexArray.back().ambientOcclusion = 1;
-			chunks[chunkIndex]->vertexArray.push_back(vertices[i + 6]);
-			chunks[chunkIndex]->vertexArray.back().ambientOcclusion = 1;
-			chunks[chunkIndex]->vertexArray.push_back(vertices[(i + 1) % 6 + 6]);
-			chunks[chunkIndex]->vertexArray.back().ambientOcclusion = 1;
+			vertexArray->push_back(vertices[(i + 1) % 6]);
+			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->push_back(vertices[i + 6]);
+			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->push_back(vertices[(i + 1) % 6 + 6]);
+			vertexArray->back().ambientOcclusion = 1;
 		}
 	}
 }
-void Planet::renderPent(const Voxel& v, GLuint colorIndex) const
+void Planet::renderPent(const Voxel& v, GLuint colorIndex, std::vector<Vertex>* vertexArray) const
 {
-	ChunkLoc c = GetChunkLoc(v);
-	int chunkIndex = c.index * 5 + c.chunckRoot;
-
+	vertexArray->reserve(16);
 	Vertex vertices[10];
 	bool neighborsSolid[7]; // 0-4 sides, 5-down, 6-up
 	for (bool& n : neighborsSolid)
@@ -549,36 +546,36 @@ void Planet::renderPent(const Voxel& v, GLuint colorIndex) const
 
 	if (!neighborsSolid[5]) {
 		for (int i = 0; i < 3; i++) {
-			chunks[chunkIndex]->vertexArray.push_back(vertices[lowerVertexIndices[i][0]]);
-			chunks[chunkIndex]->vertexArray.push_back(vertices[lowerVertexIndices[i][1]]);
-			chunks[chunkIndex]->vertexArray.push_back(vertices[lowerVertexIndices[i][2]]);
+			vertexArray->push_back(vertices[lowerVertexIndices[i][0]]);
+			vertexArray->push_back(vertices[lowerVertexIndices[i][1]]);
+			vertexArray->push_back(vertices[lowerVertexIndices[i][2]]);
 		}
 	}
 
 	if (!neighborsSolid[6]) {
 		for (int i = 0; i < 3; i++) {
-			chunks[chunkIndex]->vertexArray.push_back(vertices[lowerVertexIndices[i][0] + 5]);
-			chunks[chunkIndex]->vertexArray.push_back(vertices[lowerVertexIndices[i][1] + 5]);
-			chunks[chunkIndex]->vertexArray.push_back(vertices[lowerVertexIndices[i][2] + 5]);
+			vertexArray->push_back(vertices[lowerVertexIndices[i][0] + 5]);
+			vertexArray->push_back(vertices[lowerVertexIndices[i][1] + 5]);
+			vertexArray->push_back(vertices[lowerVertexIndices[i][2] + 5]);
 		}
 	}
 
 	for (int i = 0; i < 5; i++) {
 		if (!neighborsSolid[(i+1)%5]) {
 			// triangle 1 of side i
-			chunks[chunkIndex]->vertexArray.push_back(vertices[i]);
-			chunks[chunkIndex]->vertexArray.back().ambientOcclusion = 1;
-			chunks[chunkIndex]->vertexArray.push_back(vertices[(i + 1) % 5]);
-			chunks[chunkIndex]->vertexArray.back().ambientOcclusion = 1;
-			chunks[chunkIndex]->vertexArray.push_back(vertices[i + 5]);
-			chunks[chunkIndex]->vertexArray.back().ambientOcclusion = 1;
+			vertexArray->push_back(vertices[i]);
+			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->push_back(vertices[(i + 1) % 5]);
+			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->push_back(vertices[i + 5]);
+			vertexArray->back().ambientOcclusion = 1;
 			// triangle 2 of side i
-			chunks[chunkIndex]->vertexArray.push_back(vertices[(i + 1) % 5]);
-			chunks[chunkIndex]->vertexArray.back().ambientOcclusion = 1;
-			chunks[chunkIndex]->vertexArray.push_back(vertices[i + 5]);
-			chunks[chunkIndex]->vertexArray.back().ambientOcclusion = 1;
-			chunks[chunkIndex]->vertexArray.push_back(vertices[(i + 1) % 5 + 5]);
-			chunks[chunkIndex]->vertexArray.back().ambientOcclusion = 1;
+			vertexArray->push_back(vertices[(i + 1) % 5]);
+			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->push_back(vertices[i + 5]);
+			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->push_back(vertices[(i + 1) % 5 + 5]);
+			vertexArray->back().ambientOcclusion = 1;
 		}
 	}
 }
@@ -662,11 +659,34 @@ void Planet::setGravity(float g)
 	this->gravity = g;
 }
 
-void Planet::renderVox(Voxel v) const
+void Planet::renderVox(Voxel v, std::vector<Vertex>* vertexArray, bool* isPent) const
 {
+	bool isP;
+	if (!vertexArray) {
+		ChunkLoc c = GetChunkLoc(v);
+		int chunkIndex = c.index * 5 + c.chunckRoot;
+		vertexArray = &chunks[chunkIndex]->vertexArray;
+	}
+	if (v.x == 0 && v.y == -1) { // top
+		isP = true;
+	}
+	else if (v.x == 2 * size && v.y == size - 1) { // bottom
+		isP = true;
+	}
+	else if (v.x == 0 && v.y == size - 1) { // left
+		isP = true;
+	}
+	else if (v.x == size && v.y == size - 1) { // right 
+		isP = true;
+	}
+	else {
+		isP = false;
+	}
+	if (isPent) {
+		*isPent = isP;
+	}
 	GLuint colorIndex;
 	BlockType c = getVoxelBlockType(v);
-
 	switch (c) {
 	case BlockType::None:
 		return;
@@ -683,22 +703,13 @@ void Planet::renderVox(Voxel v) const
 		std::cout << "invalid block Type" << std::endl;
 		return;
 	}
-	if (v.x == 0 && v.y == -1) { // top
-		renderPent(v, colorIndex);
-	}
-	else if (v.x == 2 * size && v.y == size - 1) { // bottom
-		renderPent(v, colorIndex);
-	}
-	else if (v.x == 0 && v.y == size - 1) { // left
-		renderPent(v, colorIndex);
-	}
-	else if (v.x == size && v.y == size - 1) { // right 
-		renderPent(v, colorIndex);
+	
+	if (isP) {
+		renderPent(v, colorIndex, vertexArray);
 	}
 	else {
-		renderHex(v, colorIndex);
+		renderHex(v, colorIndex, vertexArray);
 	}
-
 }
 
 Voxel Planet::getVoxel(const glm::vec3 pos, float* qPtr, float* rPtr) const
@@ -712,6 +723,7 @@ Voxel Planet::getVoxel(const glm::vec3 pos, float* qPtr, float* rPtr) const
 		glm::vec3 dir = pos-center;
 		if (glm::intersectRayTriangle(glm::vec3(0.0f), dir, b.c, b.a, b.b, bar, dist) && dist > 0) break;
 	}
+	assert(inChunk < 20);
 	ChunkLoc loc = chunks[inChunk]->getLoc();
 	GridBorder gb = gridBorders[loc.index];
 	glm::vec2 pixelCoords = bar.x * gb.a + bar.y * gb.b + (1-bar.x-bar.y) * gb.c;
@@ -723,12 +735,12 @@ Voxel Planet::getVoxel(const glm::vec3 pos, float* qPtr, float* rPtr) const
 	q -= qgrid; // remainder
 	r -= rgrid;
 
-	//if (std::abs(q) >= std::abs(r)) {
-	//	rgrid += std::round(q + 0.5 * r);
-	//}
-	//else {
-	//	qgrid += std::round(r + 0.5 * q);
-	//}
+	if (std::abs(q) >= std::abs(r)) {
+		rgrid += std::round(q + 0.5 * r);
+	}
+	else {
+		qgrid += std::round(r + 0.5 * q);
+	}
 
 	Voxel v;
 	v.grid = loc.chunckRoot;
@@ -740,10 +752,7 @@ Voxel Planet::getVoxel(const glm::vec3 pos, float* qPtr, float* rPtr) const
 	}
 	if (v.x == 0 && v.y == -1) {
 		v.grid = 0;
-	}
-	// v.z = 1;
-	// placeVoxel(v, BlockType::black);
-
+	} 
 	v.z = inverseHeightFunc(glm::length(pos - center));
 
 	if (qPtr) {
