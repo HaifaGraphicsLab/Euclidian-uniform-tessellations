@@ -31,10 +31,17 @@ public:
 	PlayerMode getMode() const;
 	void setMode(PlayerMode m);
 
+	bool isColliding(std::vector<glm::vec3>& n) const;
+	bool isCollidingWithVoxel(Voxel v, std::vector<glm::vec3>& n) const;
+
 	GLuint getVAO();
 	GLuint getVBO();
 	GLsizei getNumOfVertices() const;
 	void updateVertexArray();
+
+
+	int getActiveColor() const;
+	void setActiveColor(int color);
 
 private:
 	int boundaryCollision(glm::vec3* boundaries, int length);
@@ -54,6 +61,7 @@ private:
 	float speed;
 	bool onGround;
 	bool jetpack;
+	int activeColor;
 	glm::vec3 pos;
 	glm::vec3 rightVector;
 	glm::vec3 frontVector;

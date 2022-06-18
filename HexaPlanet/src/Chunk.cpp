@@ -1,7 +1,32 @@
 #include "Chunk.h"
 #include <iostream>
 
-
+PixelInfo createPixelInfo(const Voxel& v, int neighbor) {
+	PixelInfo p;
+	p.gridAndNeighbor = (neighbor << 16) | v.grid;
+	p.x = v.x;
+	p.y = v.y;
+	p.z = v.z;
+	return p;
+}
+Voxel extractPixelInfo(const PixelInfo& pi, bool* isSuccessful, int* neighbor) {
+	int n = pi.gridAndNeighbor >> 16;
+	int grid = pi.gridAndNeighbor & 0x0000FFFF;
+	if (grid == 6) {
+		*isSuccessful = false;
+		return { 6, 0, 0, 0 };
+	}
+	else {
+		*isSuccessful = true;
+	}
+	Voxel v;
+	v.grid = grid;
+	*neighbor = n;
+	v.x = pi.x;
+	v.y = pi.y;
+	v.z = pi.z;
+	return v;
+}
 Chunk::Chunk(ChunkBorder borders, ChunkLoc loc, Grid* grid)
 {
 	this->borders = borders;
@@ -11,7 +36,9 @@ Chunk::Chunk(ChunkBorder borders, ChunkLoc loc, Grid* grid)
 	this->update = true;
 
 	glGenVertexArrays(1, &vao);
+	glGenVertexArrays(1, &pickerVao);
 	glGenBuffers(1, &vbo);
+	glGenVertexArrays(1, &pickerVbo);
 
 }
 
@@ -25,9 +52,20 @@ GLuint Chunk::getVAO()
 	return vao;
 }
 
+GLuint Chunk::getPickerVAO()
+{
+	return pickerVao;
+}
+
+
 GLuint Chunk::getVBO()
 {
 	return vbo;
+}
+
+GLuint Chunk::getPickerVBO()
+{
+	return pickerVbo;
 }
 
 GLsizei Chunk::getNumOfVertices() const

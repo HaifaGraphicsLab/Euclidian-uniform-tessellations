@@ -7,6 +7,7 @@
 #include "LightSource.h"
 #include "Planet.h"
 #include <Player.h>
+#include "GUI.h"
 
 using namespace std;
 
@@ -38,12 +39,15 @@ public:
 
 	void setActivePlanetIndex(int index);
 	int getActivePlanetIndex() const;
+
+	GUI* getGUI() const;
 	
 private:
 	vector<Planet *> planets;
 	vector<Camera *> cameras;
 	vector<Player*> players;
 	vector<LightSource *> lightSources;
+	GUI* gui;
 
 	int activeCameraIndex;
 	int activePlanetIndex;

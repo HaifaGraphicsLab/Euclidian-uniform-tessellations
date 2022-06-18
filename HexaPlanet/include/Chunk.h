@@ -12,11 +12,23 @@ struct Voxel {
 	int z;
 };
 
+struct PixelInfo {
+	unsigned int gridAndNeighbor = 6;
+	unsigned int x = 0;
+	unsigned int y = 0;
+	unsigned int z = 0;
+};
+
+PixelInfo createPixelInfo(const Voxel& v, int neighbor);
+Voxel extractPixelInfo(const PixelInfo& pi, bool* isSuccessful, int* neighbor);
+
+
 struct Vertex
 {
 	glm::vec3 position;
 	GLuint colorIndex;
 	GLuint ambientOcclusion = 0;
+	PixelInfo info;
 };
 
 struct GridBorder
@@ -44,12 +56,13 @@ public:
 	Chunk(ChunkBorder borders, ChunkLoc loc, Grid* grid);
 	ChunkBorder getBorders() const;
 	GLuint getVAO();
+	GLuint getPickerVAO();
 	GLuint getVBO();
+	GLuint getPickerVBO();
 	GLsizei getNumOfVertices() const;
 	ChunkLoc getLoc() const;
 	bool update;
 	std::vector<Vertex> vertexArray;
-
 
 private:
 	ChunkBorder borders;
@@ -60,4 +73,6 @@ private:
 	
 	GLuint vbo;
 	GLuint vao;
+	GLuint pickerVao;
+	GLuint pickerVbo;
 };

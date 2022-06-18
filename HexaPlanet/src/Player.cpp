@@ -15,11 +15,13 @@ Player::Player(Camera* camera, Planet* activePlanet, float jumpForce, float mass
 	this->mode = PlayerMode::WALKING;
 	this->velocity = glm::vec3(0);
 	this->jetpack = false;
-	speed = 40;
+	this->speed = 100;
+	this->thirdPerson = false;
 	UpdateBoundaries();
 	glGenVertexArrays(1, &vao);
 	glGenBuffers(1, &vbo);
 	updateVertexArray();
+	this->activeColor = 0;
 }
 
 int Player::boundaryCollision(glm::vec3* boundaries, int length)
@@ -494,6 +496,30 @@ void Player::setMode(PlayerMode m)
 	mode = m;
 }
 
+bool Player::isColliding(std::vector<glm::vec3>& n) const
+{
+	return collided(this->pos, n);
+}
+bool Player::isCollidingWithVoxel(Voxel v, std::vector<glm::vec3>& n) const
+{
+	std::vector<Vertex> va;
+	glm::vec3 tri[3];
+	activePlanet->renderVox(v, &va);
+	glm::vec3 tmpN;
+	bool collided = false;
+
+	for (int i = 0; i < va.size(); i += 3) {
+		tri[0] = elipseToSphere * va[i].position;
+		tri[1] = elipseToSphere * va[i + 1].position;
+		tri[2] = elipseToSphere * va[i + 2].position;
+		if (this->triangleCollided(elipseToSphere * this->pos, tri, &tmpN)) {
+			collided = true;
+			n.push_back(glm::normalize(sphereToElipse * tmpN));
+		}
+	}
+	return collided;
+}
+
 void Player::UpdateCameraUp()
 {
 	glm::vec3 up;
@@ -601,6 +627,8 @@ void Player::move2(Direction d, float stride)
 		directionVector = camera->getCameraUp();
 		stride = -stride;
 		break;
+	default:
+		return;
 	}
 	this->pos += directionVector * stride;
 	UpdateBoundaries();
@@ -669,4 +697,14 @@ void Player::updateVertexArray()
 
 	// unbind to make sure other code does not change it somewhere else
 	glBindVertexArray(0);
+}
+
+int Player::getActiveColor() const
+{
+	return activeColor;
+}
+
+void Player::setActiveColor(int color)
+{
+	this->activeColor = (color+16) % 16;
 }

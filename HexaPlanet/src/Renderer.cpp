@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 #include <algorithm>
 #include <gl\GL.h>
+#include "MousePicking.h"
 
 #define GLM_SWIZZLE
 
@@ -37,7 +38,12 @@ void Renderer::InitOpenglRendering()
 {
 	shader = ShaderProgram();
 	shader.loadShaders("vshader.glsl", "fshader.glsl");
-
+	pickingShader = ShaderProgram();
+	pickingShader.loadShaders("pickingVshader.glsl", "pickingFshader.glsl");
+	guiShader = ShaderProgram();
+	guiShader.loadShaders("guiVshader.glsl", "guiFshader.glsl");
+	pickingTex = MousePicker();
+	pickingTex.initialization(viewport_width, viewport_height);
 }
 
 
@@ -47,6 +53,51 @@ void Renderer::Render(const Scene& scene)
 	const Camera camera = scene.getActiveCamera();
 	Planet planet = scene.getActivePlanet();
 	Player player = scene.getActivePlayer();
+	pickingPhase(scene);
+	renderingPhase(scene);
+	this->guiPhase(*scene.getGUI());
+}
+
+void Renderer::pickingPhase(const Scene& scene)
+{
+	this->pickingTex.enableWriting();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	const Camera camera = scene.getActiveCamera();
+	Planet planet = scene.getActivePlanet();
+	Player player = scene.getActivePlayer();
+
+	pickingShader.use();
+	// -------------- UNIFORMS -----------------
+	glm::mat4 viewTransform = camera.GetViewTransformation();
+	glm::mat4 projectionTranform = camera.GetProjectionTransformation();
+	pickingShader.setUniform("view", viewTransform);
+	pickingShader.setUniform("projection", projectionTranform);
+
+	// -------------- CHUNK RENDERERING -----------------
+	for (int i = 0; i < 20; i++) {
+		if (planet.isActive(i)) {
+			Chunk* c = planet.getChunk(i);
+			GLuint vao = c->getPickerVAO();
+			GLuint vbo = c->getPickerVBO();
+			GLsizei count = c->getNumOfVertices();
+
+			// draw chunk
+			glBindBuffer(GL_ARRAY_BUFFER, vbo);
+			glBindVertexArray(vao);
+			glDrawArrays(GL_TRIANGLES, 0, count);
+			glBindVertexArray(0);
+		}
+	}
+	this->pickingTex.disableWriting();
+}
+
+void Renderer::renderingPhase(const Scene& scene)
+{
+	/// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	const Camera camera = scene.getActiveCamera();
+	Planet planet = scene.getActivePlanet();
+	Player player = scene.getActivePlayer();
+
 	shader.use();
 	// -------------- UNIFORMS -----------------
 	glm::mat4 viewTransform = camera.GetViewTransformation();
@@ -54,52 +105,16 @@ void Renderer::Render(const Scene& scene)
 	shader.setUniform("view", viewTransform);
 	shader.setUniform("projection", projectionTranform);
 
-	//// lighting
-	//shader.setUniform("viewPos", camera.translation);
-	//shader.setUniform("numOfLights", scene.GetLightSourceCount());
-	//for (int i = 0; i < scene.GetLightSourceCount(); i++) {
-	//	LightSource l = scene.GetLightSource(i);
-	//	string light = "lights[" + std::to_string(i) + "]";
-	//	shader.setUniform((light + ".pos").c_str(), l.worldFrame_translation);
-	//	shader.setUniform((light + ".ambientRGB").c_str(), l.ambientRGB);
-	//	shader.setUniform((light + ".diffuseRGB").c_str(), l.diffuseRGB);
-	//	shader.setUniform((light + ".specularRGB").c_str(), l.specularRGB);
-	//	shader.setUniform((light + ".ambientStrength").c_str(), l.ambientStrength);
-	//	shader.setUniform((light + ".diffuseStrength").c_str(), l.diffuseStrength);
-	//	shader.setUniform((light + ".specularStrength").c_str(), l.specularStrength);
-	//}
-
-	//Material material = model.material;
-	//shader.setUniform("material.ambientRGB", material.ambientRGB);
-	//shader.setUniform("material.diffuseRGB", material.diffuseRGB);
-	//shader.setUniform("material.specularRGB", material.specularRGB);
-	//shader.setUniform("material.shininess", model.shininess);
-
-
-	//// textures
-	//texture.bind(0);
-	//shader.setUniformSampler("material.textureMap", 0);
-	//normalMap.bind(1);
-	//shader.setUniformSampler("material.normalMap", 1);
-	//shader.setUniform("cylinderMapping", 0);
-	//shader.setUniform("hasTexture", 1);
-	//if (model.normalMap) {
-	//	shader.setUniform("normalMap", 1);
-	//}
-	//else {
-	//	shader.setUniform("normalMap", 0);
-	//}
-
 	// -------------- CHUNK RENDERERING -----------------
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
 	for (int i = 0; i < 20; i++) {
 		if (planet.isActive(i)) {
 			Chunk* c = planet.getChunk(i);
 			GLuint vao = planet.getVAO(i);
+			GLuint vbo = c->getVBO();
 			GLsizei count = c->getNumOfVertices();
 
 			// draw chunk
+			glBindBuffer(GL_ARRAY_BUFFER, vbo);
 			glBindVertexArray(vao);
 			glDrawArrays(GL_TRIANGLES, 0, count);
 			glBindVertexArray(0);
@@ -111,24 +126,37 @@ void Renderer::Render(const Scene& scene)
 		GLsizei count = player.getNumOfVertices();
 
 		// draw chunk
+
 		glBindVertexArray(vao);
 		glDrawArrays(GL_TRIANGLES, 0, count);
 		glBindVertexArray(0);
 	}
 }
-void Renderer::LoadTextures(std::string name)
+
+void Renderer::guiPhase(GUI& gui)
 {
-	if (!texture.loadTexture("bin\\Debug\\" + name, true))
-	{
-		texture.loadTexture("bin\\Release\\" + name, true);
+	if (gui.GetViewportHeight() != viewport_height || gui.GetViewportWidth() != viewport_width) {
+		gui.SetViewport(viewport_width, viewport_height);
 	}
-}
-void Renderer::LoadNormalMap(std::string name)
-{
-	if (!normalMap.loadTexture("bin\\Debug\\" + name, true))
-	{
-		normalMap.loadTexture("bin\\Release\\" + name, true);
+	guiShader.use();
+	GLuint vao = gui.getVAO();
+	GLuint vbo = gui.getVBO();
+	glBindVertexArray(vao);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+
+	for (int i = 0; i < gui.getNumOfElements(); i++) {
+		GUIelement* ge = gui.getElement(i);
+		if (ge->active) {
+			guiShader.setUniform("transform", ge->transformation);
+			ge->tex->bind();
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			ge->tex->unbind();
+		}
+
 	}
+	glBindVertexArray(0);
+
 }
 
 glm::vec3 Renderer::WorldToCamera(const glm::vec3& point, const Camera& c) {
@@ -174,8 +202,6 @@ glm::vec3 Renderer::GetBarycentricCoords(const glm::vec2& p, glm::vec3* triangle
 	return glm::vec3(u, v, w);
 }
 
-
-
 int Renderer::GetViewportWidth() const
 {
 	return viewport_width;
@@ -190,4 +216,12 @@ void Renderer::SetViewport(float width, float height)
 {
 	viewport_width = width;
 	viewport_height = height;
+	pickingTex.initialization(viewport_width, viewport_height);
+
+}
+
+PixelInfo Renderer::getPixelInfo(unsigned int x, unsigned int y)
+{
+	// inverts y axis
+	return pickingTex.ReadPixel(x, this->viewport_height-y-1);
 }

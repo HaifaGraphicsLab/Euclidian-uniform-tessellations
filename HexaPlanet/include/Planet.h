@@ -29,6 +29,7 @@ public:
 	bool placeVoxel(Voxel v, BlockType b) const;
 	float getGravity() const;
 	void setGravity(float g);
+	std::vector<ChunkLoc> neighboringChunkLocs(Voxel v) const;
 	BlockType getVoxelBlockType(Voxel v) const;
 	bool isValidVoxel(Voxel v) const;
 
@@ -36,6 +37,8 @@ public:
 	Grid* const* getGrid() const;
 	void setGrid(int i, Grid* g);
 
+
+	bool isPent(Voxel v) const;
 	void renderVox(Voxel v, std::vector<Vertex>* vertexArray=NULL, bool* isPent=NULL) const;
 
 

@@ -4,8 +4,21 @@
 enum BlockType {
 	None, 
 	black,
-	red,
-	green
+	grey, 
+	red, 
+	orange,
+	yellow,
+	lightGreen,
+	mintGreen,
+	darkGreen,
+	green,
+	cyan,
+	blue,
+	darkBlue,
+	purple,
+	pink,
+	rose,
+	white
 };
 
 

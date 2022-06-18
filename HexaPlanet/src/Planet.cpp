@@ -13,8 +13,8 @@ Planet::Planet(int size, int maxHeight) : size(size), maxHeight(maxHeight)
 	this->gravity = 10;
 	this->generateIcosahedronVertices();
 	this->center = glm::vec3(10, 0, 0);
-	this->voxelHeight = 50.0f / size;
-	this->baseHeight = 25.0f / size;
+	this->voxelHeight = 0.7f;
+	this->baseHeight = 10.0f;
 	// init Grids of root chunks
 	for (int i = 0; i < 5; i++) {
 		bool extra = (i == 0) || (i == 4);
@@ -39,26 +39,14 @@ Planet::Planet(int size, int maxHeight) : size(size), maxHeight(maxHeight)
 	for (int i = 0; i < 5; i++) {
 		for (int x = 0; x < 2 * size; x++) {
 			for (int y = 0; y < size; y++) {
-				for (int h = 1; h < 2; h++) {
-					int t = rand() % 3;
-					// (*grid[i])(x, y, y/5) = BlockType::red;
+				for (int h = 0; h < (x+y)/6; h++) {
+					int t = rand() % 16;
+					(*grid[i])(x, y, h) = BlockType(t+1);
 
-					if (t % 3 == 1) {
-						(*grid[i])(x, y, h) = BlockType::black;
-					}
-					if (t % 3 == 0) {
-						(*grid[i])(x, y, h) = BlockType::red;
-					}
-					if (t % 3 == 2) {
-						(*grid[i])(x, y, h) = BlockType::green;
-					}
 				}
 			}
 		}
 	}
-
-	(*grid[0])("extra", 1) = BlockType::red;
-	(*grid[4])("extra", 1) = BlockType::red;
 
 	// create individual chunks
 	for (int i = 0; i < 20; i++) {
@@ -433,7 +421,7 @@ void Planet::renderHex(const Voxel& v, GLuint colorIndex, std::vector<Vertex>* v
 	vertexArray->reserve(18);
 
 	Vertex vertices[12];
-	bool neighborsSolid[8]; // 0-4 sides, 5-down, 6-up
+	bool neighborsSolid[8]; // 0-5 sides, 6-down, 7-up
 	Voxel bottomNeighbor = getNeighbor(v, 6);
 	Voxel topNeighbor = getNeighbor(v, 7);
 
@@ -460,25 +448,57 @@ void Planet::renderHex(const Voxel& v, GLuint colorIndex, std::vector<Vertex>* v
 		vertices[i].position = normalizedPosition * heightFunc(v.z) + center;
 		vertices[i + 6].position = normalizedPosition * heightFunc(v.z + 1) + center;
 
+		//ambient occlusion
+		Voxel up1 = this->getNeighbor(neighbor1, 7);
+		Voxel up2 = this->getNeighbor(neighbor2, 7);
+		Voxel down1 = this->getNeighbor(neighbor1, 6);
+		Voxel down2 = this->getNeighbor(neighbor2, 6);
+		if (isValidVoxel(up1) && isValidVoxel(up2)) {
+			if (getVoxelBlockType(up1) != BlockType::None || getVoxelBlockType(up2) != BlockType::None) {
+				if (getVoxelBlockType(up1) != BlockType::None && getVoxelBlockType(up2) != BlockType::None) {
+					vertices[i + 6].ambientOcclusion = 2;
+				}
+				else {
+					vertices[i + 6].ambientOcclusion = 1;
+				}
+			}
+		}
+		if (isValidVoxel(down1) && isValidVoxel(down2)) {
+			if (getVoxelBlockType(down1) != BlockType::None || getVoxelBlockType(down2) != BlockType::None) {
+				if (getVoxelBlockType(down1) != BlockType::None && getVoxelBlockType(down2) != BlockType::None) {
+					vertices[i].ambientOcclusion = 2;
+				}
+				else {
+					vertices[i].ambientOcclusion = 1;
+				}
+			}
+		}
+
 	}
 
 	// add vertices to vertexArray
 	int lowerVertexIndices[4][3] = {
-		{0,1,5}, {1,2,5}, {2,4,5}, {2,3,4},
+		{0,1,5}, {2,3,1}, {4,5,3}, {1,3,5},
 	};
 
 	if (!neighborsSolid[6]) {
 		for (int i = 0; i < 4; i++) {
 			vertexArray->push_back(vertices[lowerVertexIndices[i][0]]);
+			vertexArray->back().info = createPixelInfo(v, 6);
 			vertexArray->push_back(vertices[lowerVertexIndices[i][1]]);
+			vertexArray->back().info = createPixelInfo(v, 6);
 			vertexArray->push_back(vertices[lowerVertexIndices[i][2]]);
+			vertexArray->back().info = createPixelInfo(v, 6);
 		}
 	}
 	if (!neighborsSolid[7]) {
 		for (int i = 0; i < 4; i++) {
 			vertexArray->push_back(vertices[lowerVertexIndices[i][0] + 6]);
+			vertexArray->back().info = createPixelInfo(v, 7);
 			vertexArray->push_back(vertices[lowerVertexIndices[i][1] + 6]);
+			vertexArray->back().info = createPixelInfo(v, 7);
 			vertexArray->push_back(vertices[lowerVertexIndices[i][2] + 6]);
+			vertexArray->back().info = createPixelInfo(v, 7);
 		}
 	}
 
@@ -488,17 +508,24 @@ void Planet::renderHex(const Voxel& v, GLuint colorIndex, std::vector<Vertex>* v
 			// triangle 1 of side i
 			vertexArray->push_back(vertices[i]);
 			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->back().info = createPixelInfo(v, (i + 1) % 6);
 			vertexArray->push_back(vertices[(i + 1) % 6]);
 			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->back().info = createPixelInfo(v, (i + 1) % 6);
 			vertexArray->push_back(vertices[i + 6]);
 			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->back().info = createPixelInfo(v, (i + 1) % 6);
+
 			// triangle 2 of side i
 			vertexArray->push_back(vertices[(i + 1) % 6]);
 			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->back().info = createPixelInfo(v, (i + 1) % 6);
 			vertexArray->push_back(vertices[i + 6]);
 			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->back().info = createPixelInfo(v, (i + 1) % 6);
 			vertexArray->push_back(vertices[(i + 1) % 6 + 6]);
 			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->back().info = createPixelInfo(v, (i + 1) % 6);
 		}
 	}
 }
@@ -537,6 +564,33 @@ void Planet::renderPent(const Voxel& v, GLuint colorIndex, std::vector<Vertex>* 
 		glm::vec3 normalizedPosition = (this->voxelTo3DCoordsNormalized(v) + this->voxelTo3DCoordsNormalized(neighbor1) + this->voxelTo3DCoordsNormalized(neighbor2)) / 3.0f;
 		vertices[i].position = normalizedPosition * heightFunc(v.z) + center;
 		vertices[i + 5].position = normalizedPosition * heightFunc(v.z + 1) + center;
+
+		//ambient occlusion
+		Voxel up1 = this->getNeighbor(neighbor1, 7);
+		Voxel up2 = this->getNeighbor(neighbor2, 7);
+		Voxel down1 = this->getNeighbor(neighbor1, 6);
+		Voxel down2 = this->getNeighbor(neighbor2, 6);
+
+		if (isValidVoxel(up1) && isValidVoxel(up2)) {
+			if (getVoxelBlockType(up1) != BlockType::None || getVoxelBlockType(up2) != BlockType::None) {
+				if (getVoxelBlockType(up1) != BlockType::None && getVoxelBlockType(up2) != BlockType::None) {
+					vertices[i + 5].ambientOcclusion = 2;
+				}
+				else {
+					vertices[i + 5].ambientOcclusion = 1;
+				}
+			}
+		}
+		if (isValidVoxel(down1) && isValidVoxel(down2)) {
+			if (getVoxelBlockType(down1) != BlockType::None || getVoxelBlockType(down2) != BlockType::None) {
+				if (getVoxelBlockType(down1) != BlockType::None && getVoxelBlockType(down2) != BlockType::None) {
+					vertices[i].ambientOcclusion = 2;
+				}
+				else {
+					vertices[i].ambientOcclusion = 1;
+				}
+			}
+		}
 	}
 
 	// add vertices to vertexArray
@@ -547,17 +601,27 @@ void Planet::renderPent(const Voxel& v, GLuint colorIndex, std::vector<Vertex>* 
 	if (!neighborsSolid[5]) {
 		for (int i = 0; i < 3; i++) {
 			vertexArray->push_back(vertices[lowerVertexIndices[i][0]]);
+			vertexArray->back().info = createPixelInfo(v, 6);
 			vertexArray->push_back(vertices[lowerVertexIndices[i][1]]);
+			vertexArray->back().info = createPixelInfo(v, 6);
 			vertexArray->push_back(vertices[lowerVertexIndices[i][2]]);
+			vertexArray->back().info = createPixelInfo(v, 6);
+
 		}
+
 	}
 
 	if (!neighborsSolid[6]) {
 		for (int i = 0; i < 3; i++) {
 			vertexArray->push_back(vertices[lowerVertexIndices[i][0] + 5]);
+			vertexArray->back().info = createPixelInfo(v, 7);
 			vertexArray->push_back(vertices[lowerVertexIndices[i][1] + 5]);
+			vertexArray->back().info = createPixelInfo(v, 7);
 			vertexArray->push_back(vertices[lowerVertexIndices[i][2] + 5]);
+			vertexArray->back().info = createPixelInfo(v, 7);
+
 		}
+
 	}
 
 	for (int i = 0; i < 5; i++) {
@@ -565,17 +629,25 @@ void Planet::renderPent(const Voxel& v, GLuint colorIndex, std::vector<Vertex>* 
 			// triangle 1 of side i
 			vertexArray->push_back(vertices[i]);
 			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->back().info = createPixelInfo(v, (i + 1) % 5);
 			vertexArray->push_back(vertices[(i + 1) % 5]);
 			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->back().info = createPixelInfo(v, (i + 1) % 5);
 			vertexArray->push_back(vertices[i + 5]);
 			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->back().info = createPixelInfo(v, (i + 1) % 5);
+
 			// triangle 2 of side i
 			vertexArray->push_back(vertices[(i + 1) % 5]);
 			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->back().info = createPixelInfo(v, (i + 1) % 5);
 			vertexArray->push_back(vertices[i + 5]);
 			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->back().info = createPixelInfo(v, (i + 1) % 5);
 			vertexArray->push_back(vertices[(i + 1) % 5 + 5]);
 			vertexArray->back().ambientOcclusion = 1;
+			vertexArray->back().info = createPixelInfo(v, (i + 1) % 5);
+
 		}
 	}
 }
@@ -612,6 +684,44 @@ void Planet::setGrid(int i, Grid* g)
 	this->grid[i] = g;
 }
 
+
+bool Planet::isPent(Voxel v) const
+{
+	bool isP;
+	if (v.x == 0 && v.y == -1) { // top
+		isP = true;
+	}
+	else if (v.x == 2 * size && v.y == size - 1) { // bottom
+		isP = true;
+	}
+	else if (v.x == 0 && v.y == size - 1) { // left
+		isP = true;
+	}
+	else if (v.x == size && v.y == size - 1) { // right 
+		isP = true;
+	}
+	else {
+		isP = false;
+	}
+	return isP;
+}
+
+// returns the neighboring chunks
+std::vector<ChunkLoc> Planet::neighboringChunkLocs(Voxel v) const
+{
+	std::vector<ChunkLoc> n;
+	ChunkLoc cl = this->GetChunkLoc(v);
+	bool isP = this->isPent(v);
+	int num = isP ? 5 : 6;
+	for (int i = 0; i < num; i++) {
+		ChunkLoc cl_i = this->GetChunkLoc(this->getNeighbor(v, i));
+		if (cl_i.chunckRoot != cl.chunckRoot || cl_i.index != cl.index) {
+			n.push_back(cl_i);
+		}
+	}
+	return n;
+}
+
 BlockType Planet::getVoxelBlockType(Voxel v) const
 {
 	BlockType c;
@@ -636,6 +746,11 @@ bool Planet::placeVoxel(Voxel v, BlockType b) const
 	ChunkLoc loc = GetChunkLoc(v);
 	int chunk = loc.index * 5 + loc.chunckRoot;
 	chunks[chunk]->update = true;
+	std::vector<ChunkLoc> locs = neighboringChunkLocs(v);
+	for (ChunkLoc l : locs) {
+		int chunk = l.index * 5 + l.chunckRoot;
+		chunks[chunk]->update = true;
+	}
 	if (v.x == 0 && v.y == -1) {
 		(*grid[0])("extra", v.z) = b;
 	}
@@ -661,48 +776,23 @@ void Planet::setGravity(float g)
 
 void Planet::renderVox(Voxel v, std::vector<Vertex>* vertexArray, bool* isPent) const
 {
-	bool isP;
 	if (!vertexArray) {
 		ChunkLoc c = GetChunkLoc(v);
 		int chunkIndex = c.index * 5 + c.chunckRoot;
 		vertexArray = &chunks[chunkIndex]->vertexArray;
 	}
-	if (v.x == 0 && v.y == -1) { // top
-		isP = true;
-	}
-	else if (v.x == 2 * size && v.y == size - 1) { // bottom
-		isP = true;
-	}
-	else if (v.x == 0 && v.y == size - 1) { // left
-		isP = true;
-	}
-	else if (v.x == size && v.y == size - 1) { // right 
-		isP = true;
-	}
-	else {
-		isP = false;
-	}
+	bool isP = this->isPent(v);
 	if (isPent) {
 		*isPent = isP;
 	}
+
 	GLuint colorIndex;
 	BlockType c = getVoxelBlockType(v);
-	switch (c) {
-	case BlockType::None:
-		return;
-	case BlockType::red:
-		colorIndex = 0;
-		break;
-	case BlockType::green:
-		colorIndex = 1;
-		break;
-	case BlockType::black:
-		colorIndex = 2;
-		break;
-	default:
-		std::cout << "invalid block Type" << std::endl;
+	
+	if (c == BlockType::None) {
 		return;
 	}
+	colorIndex = c - 1;
 	
 	if (isP) {
 		renderPent(v, colorIndex, vertexArray);
@@ -823,6 +913,8 @@ void Planet::updateVertexArray(int chunk)
 	if (chunks[chunk]->vertexArray.empty()) {
 		return;
 	}
+
+	// rendering VAO
 	glBindVertexArray(chunks[chunk]->getVAO());
 	glBindBuffer(GL_ARRAY_BUFFER, chunks[chunk]->getVBO());
 
@@ -837,8 +929,30 @@ void Planet::updateVertexArray(int chunk)
 	glVertexAttribIPointer(2, 1, GL_UNSIGNED_SHORT, sizeof(Vertex), (GLvoid*)(3 * sizeof(GLfloat) + sizeof(GLint)));
 	glEnableVertexAttribArray(2);
 
+	// mouse picking VAO
+
+	glBindVertexArray(chunks[chunk]->getPickerVAO());
+	//glBindBuffer(GL_ARRAY_BUFFER, chunks[chunk]->getPickerVBO());
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(Vertex), (GLvoid*)(3 * sizeof(GLfloat) + 2*sizeof(GLint)));
+	glEnableVertexAttribArray(1);
+
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(Vertex), (GLvoid*)(3 * sizeof(GLfloat) + 2 * sizeof(GLint)+ 1 * sizeof(GLuint)));
+	glEnableVertexAttribArray(2);
+
+	glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, sizeof(Vertex), (GLvoid*)(3 * sizeof(GLfloat) + 2 * sizeof(GLint) + 2 * sizeof(GLuint)));
+	glEnableVertexAttribArray(3);
+
+	glVertexAttribIPointer(4, 1, GL_UNSIGNED_INT, sizeof(Vertex), (GLvoid*)(3 * sizeof(GLfloat) + 2 * sizeof(GLint) + 3 * sizeof(GLuint)));
+	glEnableVertexAttribArray(4);
+
 
 	// unbind to make sure other code does not change it somewhere else
 	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 }

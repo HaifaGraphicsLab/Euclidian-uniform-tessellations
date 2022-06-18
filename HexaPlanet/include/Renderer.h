@@ -5,6 +5,8 @@
 #include <iostream>
 #include "ShaderProgram.h"
 #include "Texture2D.h"
+#include "MousePicking.h"
+#include <GUI.h>
 
 
 struct rectangle {
@@ -20,19 +22,19 @@ public:
 	Renderer(int viewportWidth, int viewportHeight);
 	virtual ~Renderer();
 	void Render(const Scene& scene);
-	void LoadTextures(std::string name);
-	void LoadNormalMap(std::string name);
 
 	glm::vec3 GetBarycentricCoords(const glm::vec2& p, glm::vec3* triangle_v);
 
 	int GetViewportWidth() const;
 	int GetViewportHeight() const;
 
-	//void ApplyFilter(float* mask , int size_x, int size_y);
 	void SetViewport(float width, float height);
-
+	PixelInfo getPixelInfo(unsigned int x, unsigned int y);
 	
 private:
+	void pickingPhase(const Scene& scene);
+	void renderingPhase(const Scene& scene);
+	void guiPhase(GUI& gui);
 
 	glm::vec3 WorldToCamera(const glm::vec3& point, const Camera& c);
 	glm::vec2 CameraToCoordinates(const glm::vec3& point, bool& OOS);
@@ -45,7 +47,8 @@ private:
 	int viewport_height;
 
 	ShaderProgram shader;
-	Texture2D texture;
-	Texture2D normalMap;
+	ShaderProgram pickingShader;
+	ShaderProgram guiShader;
+	MousePicker pickingTex;
 
 };

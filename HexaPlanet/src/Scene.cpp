@@ -10,14 +10,16 @@ Scene::Scene() :
 	addCamera(c);
 	LightSource* l = new LightSource();
 	addLightSource(l);
-	Planet* p = new Planet(20, 20);
+	Planet* p = new Planet(20, 10);
 	addPlanet(p);
-	Player* player = new Player(c, p, 10, 10, glm::vec3(30,0,0));
+	Player* player = new Player(c, p, 16, 1, glm::vec3(30,0,0));
 	// player->setActivePlanet(p);
 	addPlayer(player);
-	//LightSource* l2 = new LightSource();
-
-	//AddLightSource(shared_ptr<LightSource>(l2));
+	gui = new GUI();
+	gui->createNewElement("crossHair", glm::vec2(0, 0), glm::vec2(0.015, 0.015), "crossHair.png");
+	int pos = 8;
+	gui->createNewElement("selector", glm::vec2((float)(pos - 8) / 8, -0.80), glm::vec2(0.6, 0.6), "selector.png");
+	gui->createNewElement("colorBar", glm::vec2(0, -0.80), glm::vec2(0.6, 0.6), "colorBar.png");
 
 }
 
@@ -116,4 +118,9 @@ void Scene::setActivePlanetIndex(int index)
 int Scene::getActivePlanetIndex() const
 {
 	return activePlanetIndex;
+}
+
+GUI* Scene::getGUI() const 
+{
+	return gui;
 }

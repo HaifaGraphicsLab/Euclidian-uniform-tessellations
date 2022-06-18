@@ -20,6 +20,7 @@
  */
 
 glm::vec4 clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 1.00f);
+float colorBarTime = 3;
 bool cursorMode = true;
 int windowWidth = 1280, windowHeight = 720;
 
@@ -27,6 +28,8 @@ float lastFrame = 0.0f;
 float lastMouseX, lastMouseY;
 float firstMouse = true;
 Scene* s;
+float lastScrollTime = glfwGetTime();
+
 /**
  * Function declarations
  */
@@ -46,7 +49,10 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
-	s->getActiveCamera().setFov(s->getActiveCamera().getFov() - (float)yoffset);
+	//s->getActiveCamera().setFov(s->getActiveCamera().getFov() - (float)yoffset);
+	s->getActivePlayer().setActiveColor(s->getActivePlayer().getActiveColor() + (int)yoffset);
+	lastScrollTime = glfwGetTime();
+
 }
 
 void mouseCallback(GLFWwindow* window, double xpos, double ypos)
@@ -242,21 +248,59 @@ void RenderFrame(GLFWwindow* window, Scene& scene, Renderer& renderer, ImGuiIO& 
 	if (!io.WantCaptureMouse)
 	{
 		// TODO: Handle mouse events here
-		if (io.MouseDown[0])
-		{
-			// Left mouse button is down
-			if (!cursorMode) {
-				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-				cursorMode = true;
-				firstMouse = true;
+		if (io.MouseClicked[0] || io.MouseClicked[1]) {
+			PixelInfo p = renderer.getPixelInfo(renderer.GetViewportWidth() / 2, renderer.GetViewportHeight() / 2);
+			bool res; int neighbor;
+			Voxel v = extractPixelInfo(p, &res, &neighbor);
+			std::cout << "voxel: " << v.grid << " " << v.x << " " << v.y << " " << v.z << std::endl;
+			std::cout << "neighbor: " << neighbor << std::endl << std::endl;
+
+			if (io.MouseClicked[1])
+			{
+				// right mouse button is down
+				Voxel v_n = scene.getActivePlanet().getNeighbor(v, neighbor);
+				if (scene.getActivePlanet().isValidVoxel(v_n)) {
+					scene.getActivePlanet().placeVoxel(v_n, (BlockType)(activePlayer.getActiveColor() + 1));
+					std::vector <glm::vec3> tmp;
+					if (scene.getActivePlayer().isCollidingWithVoxel(v_n, tmp)) {
+						scene.getActivePlanet().placeVoxel(v_n, BlockType::None);
+
+					}
+				}
+
+			}
+			else {
+				// Left mouse button is down
+				if (!cursorMode) {
+					glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+					cursorMode = true;
+					firstMouse = true;
+				}
+				scene.getActivePlanet().placeVoxel(v, BlockType::None);
 			}
 
-
 		}
+
 	}
 	// activePlayer.UpdateCameraUp();
 	activePlayer.UpdatePos(deltaTime);
 
+	if (activePlayer.isThirdPerson()) {
+		scene.getGUI()->updateActive("crossHair", false);
+	}
+	else {
+		scene.getGUI()->updateActive("crossHair", true);
+	}
+	if (lastFrame - lastScrollTime> colorBarTime) {
+		scene.getGUI()->updateActive("selector", false);
+		scene.getGUI()->updateActive("colorBar", false);
+	}
+	else {
+		scene.getGUI()->updateActive("selector", true);
+		scene.getGUI()->updateActive("colorBar", true);
+
+	}
+	scene.getGUI()->updateTranslation("selector", glm::vec2((float)(scene.getActivePlayer().getActiveColor() - 8) / 8.0f * 0.597f +0.03f, -0.80));
 
 	renderer.Render(scene);
 
@@ -337,7 +381,6 @@ void drawPlanetMenu(Planet& p) {
 	if (ImGui::Button("Load")) {
 		if (activeLoad >= 0) {
 			TerrainStorage::loadTerrain(&p, t[activeLoad]);
-
 		}
 	}
 	ImGui::SameLine(50);
@@ -356,9 +399,9 @@ void drawPlanetMenu(Planet& p) {
 	glm::vec3 center = p.getCenter();
 	if (ImGui::SliderFloat3("Center", (float*)&center, -100, 100)) p.setCenter(center);
 	float baseHeight = p.getBaseHeight();
-	if (ImGui::SliderFloat("Base Height", (float*)&baseHeight, 0, 20)) p.setBaseHeight(baseHeight);
+	if (ImGui::SliderFloat("Base Height", (float*)&baseHeight, 0, 100)) p.setBaseHeight(baseHeight);
 	float voxelHeight = p.getVoxelHeight();
-	if (ImGui::SliderFloat("Voxel Height", (float*)&voxelHeight, 0, 20)) p.setVoxelHeight(voxelHeight);
+	if (ImGui::SliderFloat("Voxel Height", (float*)&voxelHeight, 0, 10)) p.setVoxelHeight(voxelHeight);
 
 	float gravity = p.getGravity();
 	if (ImGui::SliderFloat("Gravity", (float*)&gravity, 0, 30)) p.setGravity(gravity);
@@ -389,12 +432,12 @@ void drawPlayerMenu(Player& player) {
 	}
 
 	float jumpForce = player.getJumpForce();
-	if (ImGui::SliderFloat("Jump Force", (float*)&jumpForce, 0, 20)) player.setJumpForce(jumpForce);
+	if (ImGui::SliderFloat("Jump Force", (float*)&jumpForce, 0, 30)) player.setJumpForce(jumpForce);
 	float mass = player.getMass();
-	if (ImGui::SliderFloat("Mass", (float*)&mass, 0.01, 20)) player.setMass(mass);
+	if (ImGui::SliderFloat("Mass", (float*)&mass, 0.01, 10)) player.setMass(mass);
 
 	float speed = player.getSpeed();
-	if (ImGui::SliderFloat("Speed", (float*)&speed, 0, 20)) player.setSpeed(speed);
+	if (ImGui::SliderFloat("Speed", (float*)&speed, 0, 200)) player.setSpeed(speed);
 	bool jetPack = player.hasJetpack();
 	if (ImGui::Checkbox("Jetpack", &jetPack)) player.setJetpack(jetPack);
 	bool thirdPerson = player.isThirdPerson();
