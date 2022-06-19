@@ -190,8 +190,6 @@ void RenderFrame(GLFWwindow* window, Scene& scene, Renderer& renderer, ImGuiIO& 
 	if ((float)frameBufferHeight / frameBufferWidth != activeCamera.getAspectRatio()) {
 		activeCamera.setAspectRatio((float)frameBufferHeight / frameBufferWidth);
 	}
-	float cameraSpeed = activePlayer.getSpeed();
-
 	//calculate delta time
 	float currentFrame = glfwGetTime();
 	float deltaTime = currentFrame - lastFrame;
@@ -218,25 +216,25 @@ void RenderFrame(GLFWwindow* window, Scene& scene, Renderer& renderer, ImGuiIO& 
 		}
 		if (io.KeysDown[GLFW_KEY_W])
 		{
-			activePlayer.move(Direction::FORWARD, deltaTime * cameraSpeed);
+			activePlayer.move(Direction::FORWARD, deltaTime);
 		}
 		if (io.KeysDown[GLFW_KEY_S])
 		{
-			activePlayer.move(Direction::BACKWARD, deltaTime * cameraSpeed);
+			activePlayer.move(Direction::BACKWARD, deltaTime);
 
 		}
 		if (io.KeysDown[GLFW_KEY_A])
 		{
-			activePlayer.move(Direction::LEFT, deltaTime * cameraSpeed);
+			activePlayer.move(Direction::LEFT, deltaTime);
 			
 		}
 		if(io.KeysDown[GLFW_KEY_D])
 		{
-			activePlayer.move(Direction::RIGHT, deltaTime * cameraSpeed);
+			activePlayer.move(Direction::RIGHT, deltaTime);
 
 		}
 		if (io.KeysDown[GLFW_KEY_SPACE]) {
-			activePlayer.move(Direction::JUMP, deltaTime * activePlayer.getJumpForce());
+			activePlayer.move(Direction::JUMP, deltaTime);
 		}
 		if (io.KeysDown[GLFW_KEY_ESCAPE])
 		{
@@ -390,7 +388,7 @@ void drawPlanetMenu(Planet& p) {
 		}
 	}
 	if (ImGui::Button("Save")) {
-		TerrainStorage::saveTerrain(p.getGrid(), s);
+		TerrainStorage::saveTerrain(p, s);
 	}
 	ImGui::SameLine(50);
 	ImGui::InputText("Terrain Name", s, 10);
@@ -405,13 +403,24 @@ void drawPlanetMenu(Planet& p) {
 
 	float gravity = p.getGravity();
 	if (ImGui::SliderFloat("Gravity", (float*)&gravity, 0, 30)) p.setGravity(gravity);
+	float airFriction = p.getAirFriction();
+	if (ImGui::SliderFloat("Air Friction", (float*)&airFriction, 0, 30)) p.setAirFriction(airFriction);
+	float groundFriction = p.getGroundFriction();
+	if (ImGui::SliderFloat("Ground Friction", (float*)&groundFriction, 0, 30)) p.setGroundFriction(groundFriction);
 
+
+	static int z = 0;
+	ImGui::SliderInt("Z", &z, 0, p.getGrid(0)->getZ() - 1);
+	if (ImGui::Button("Fill Z")) {
+		p.fillSky(z);
+	}
 
 	int count = 0;
 	for (bool* i = p.activeChunks; count < 20; i++) {
 		ImGui::Checkbox(std::to_string(count).c_str(), i);
 		count++;
 	}
+
 	ImGui::End();
 
 }
@@ -432,12 +441,12 @@ void drawPlayerMenu(Player& player) {
 	}
 
 	float jumpForce = player.getJumpForce();
-	if (ImGui::SliderFloat("Jump Force", (float*)&jumpForce, 0, 30)) player.setJumpForce(jumpForce);
+	if (ImGui::SliderFloat("Jump Force", (float*)&jumpForce, 0, 500)) player.setJumpForce(jumpForce);
 	float mass = player.getMass();
 	if (ImGui::SliderFloat("Mass", (float*)&mass, 0.01, 10)) player.setMass(mass);
 
 	float speed = player.getSpeed();
-	if (ImGui::SliderFloat("Speed", (float*)&speed, 0, 200)) player.setSpeed(speed);
+	if (ImGui::SliderFloat("Speed", (float*)&speed, 0, 1000)) player.setSpeed(speed);
 	bool jetPack = player.hasJetpack();
 	if (ImGui::Checkbox("Jetpack", &jetPack)) player.setJetpack(jetPack);
 	bool thirdPerson = player.isThirdPerson();
@@ -457,7 +466,7 @@ struct Window {
 };
 
 Window windows[] = {
-		{0, "Info", "CTRL+I", false},
+		{0, "Info", "CTRL+I", true},
 		{1, "Camera", "CTRL+C", false},
 		{2, "Planet", "", false},
 		{3, "Player", "", false}

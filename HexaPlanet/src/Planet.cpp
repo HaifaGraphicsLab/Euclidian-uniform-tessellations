@@ -11,6 +11,8 @@
 Planet::Planet(int size, int maxHeight) : size(size), maxHeight(maxHeight)
 {
 	this->gravity = 10;
+	this->airFriction = 5;
+	this->groundFriction = 5;
 	this->generateIcosahedronVertices();
 	this->center = glm::vec3(10, 0, 0);
 	this->voxelHeight = 0.7f;
@@ -33,15 +35,42 @@ Planet::Planet(int size, int maxHeight) : size(size), maxHeight(maxHeight)
 	//(*grid[4])(1, size-1, 3) = BlockType::black;
 
 	//(*grid[0])(size, size - 1, 3) = BlockType::green;
-	//(*grid[0])(2*size - 1, 0, 3) = BlockType::red;
+	// (*grid[0])(2*size - 1, 0, 3) = BlockType::red;
 
 
 	for (int i = 0; i < 5; i++) {
 		for (int x = 0; x < 2 * size; x++) {
 			for (int y = 0; y < size; y++) {
-				for (int h = 0; h < (x+y)/6; h++) {
-					int t = rand() % 16;
-					(*grid[i])(x, y, h) = BlockType(t+1);
+				for (int h = 0; h < 4; h++) {
+					if (h == 0) {
+
+						int t = rand() % 2;
+						if (t == 0) {
+							(*grid[i])(x, y, h) = BlockType::black;
+						}
+						else {
+							(*grid[i])(x, y, h) = BlockType::grey;
+						}
+					}
+					else if (h < 4 - 1) {
+						(*grid[i])(x, y, h) = BlockType::orange;
+					}
+					else {
+						int t = rand() % 4;
+						if (t == 0) {
+							(*grid[i])(x, y, h) = BlockType::green;
+						}
+						else if (t == 1) {
+							(*grid[i])(x, y, h) = BlockType::darkGreen;
+						}
+						else if (t == 2) {
+							(*grid[i])(x, y, h) = BlockType::lightGreen;
+						}
+						else {
+							(*grid[i])(x, y, h) = BlockType::darkGreen;
+						}
+					}
+					//(*grid[i])(x, y, h) = BlockType(t+1);
 
 				}
 			}
@@ -67,6 +96,25 @@ Planet::Planet(int size, int maxHeight) : size(size), maxHeight(maxHeight)
 	}
 	this->generateGridBorders();
 
+}
+
+void Planet::fillSky(int z) {
+	 for (int i = 0; i < 5; i++) {
+			for (int x = 0; x < 2 * size; x++) {
+				for (int y = 0; y < size; y++) {
+					int t = rand() % 2;
+					if (t == 0) {
+						(*grid[i])(x, y, z) = BlockType::orange;
+					}
+					else {
+						(*grid[i])(x, y, z) = BlockType::yellow;
+					}
+				}
+			}
+		}
+	 for (int chunk = 0; chunk < 20; chunk++) {
+		 this->chunks[chunk]->update = true;
+	 }
 }
 
 bool Planet::CheckCollision(glm::vec3 pos, Voxel& v) const
@@ -100,6 +148,18 @@ void Planet::setVoxelHeight(float voxelHeight)
 		chunks[chunk]->update = true;
 	}
 	this->voxelHeight = voxelHeight;
+}
+
+void Planet::setSize(int size)
+{
+	this->size = size;
+	generateGridBorders();
+
+}
+
+void Planet::setMaxHeight(int maxHeight)
+{
+	this->maxHeight = maxHeight;
 }
 
 glm::vec3 Planet::getCenter() const
@@ -774,6 +834,26 @@ void Planet::setGravity(float g)
 	this->gravity = g;
 }
 
+float Planet::getAirFriction() const
+{
+	return airFriction;
+}
+
+void Planet::setAirFriction(float f)
+{
+	airFriction = f;
+}
+
+float Planet::getGroundFriction() const
+{
+	return groundFriction;
+}
+
+void Planet::setGroundFriction(float f)
+{
+	groundFriction = f;
+}
+
 void Planet::renderVox(Voxel v, std::vector<Vertex>* vertexArray, bool* isPent) const
 {
 	if (!vertexArray) {
@@ -804,16 +884,19 @@ void Planet::renderVox(Voxel v, std::vector<Vertex>* vertexArray, bool* isPent) 
 
 Voxel Planet::getVoxel(const glm::vec3 pos, float* qPtr, float* rPtr) const
 {
+	glm::vec3 tmpPos = pos;
 	int inChunk;
 	ChunkBorder b;
 	glm::vec2 bar;
 	float dist;
-	for (inChunk = 0; inChunk < 20; inChunk++) {
-		b = chunks[inChunk]->getBorders();
-		glm::vec3 dir = pos-center;
-		if (glm::intersectRayTriangle(glm::vec3(0.0f), dir, b.c, b.a, b.b, bar, dist) && dist > 0) break;
-	}
-	assert(inChunk < 20);
+	do {
+		for (inChunk = 0; inChunk < 20; inChunk++) {
+			b = chunks[inChunk]->getBorders();
+			glm::vec3 dir = tmpPos - center;
+			if (glm::intersectRayTriangle(glm::vec3(0.0f), dir, b.c, b.a, b.b, bar, dist) && dist > 0) break;
+		}
+		tmpPos.x += 0.001;
+	} while (inChunk == 20);
 	ChunkLoc loc = chunks[inChunk]->getLoc();
 	GridBorder gb = gridBorders[loc.index];
 	glm::vec2 pixelCoords = bar.x * gb.a + bar.y * gb.b + (1-bar.x-bar.y) * gb.c;

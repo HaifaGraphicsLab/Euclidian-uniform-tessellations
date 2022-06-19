@@ -9,12 +9,15 @@ class Planet {
 public:
 	Planet(int size, int maxHeight);
 
+	void fillSky(int z);
+
 	bool CheckCollision(glm::vec3 pos, Voxel& vOut) const;
 
 	void setCenter(glm::vec3 center);
 	void setBaseHeight(float baseHeight);
 	void setVoxelHeight(float voxelHeight);
-
+	void setSize(int size);
+	void setMaxHeight(int maxHeight);
 	glm::vec3 getCenter() const;
 	float getBaseHeight() const;
 	float getVoxelHeight() const;
@@ -29,6 +32,10 @@ public:
 	bool placeVoxel(Voxel v, BlockType b) const;
 	float getGravity() const;
 	void setGravity(float g);
+	float getAirFriction() const;
+	void setAirFriction(float f);
+	float getGroundFriction() const;
+	void setGroundFriction(float f);
 	std::vector<ChunkLoc> neighboringChunkLocs(Voxel v) const;
 	BlockType getVoxelBlockType(Voxel v) const;
 	bool isValidVoxel(Voxel v) const;
@@ -45,6 +52,8 @@ public:
 private:
 	friend class TerrainStorage;
 	float gravity;
+	float airFriction;
+	float groundFriction;
 
 
 	Chunk* chunks[20];

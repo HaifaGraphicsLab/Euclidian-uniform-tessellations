@@ -15,7 +15,7 @@ Player::Player(Camera* camera, Planet* activePlanet, float jumpForce, float mass
 	this->mode = PlayerMode::WALKING;
 	this->velocity = glm::vec3(0);
 	this->jetpack = false;
-	this->speed = 100;
+	this->speed = 200;
 	this->thirdPerson = false;
 	UpdateBoundaries();
 	glGenVertexArrays(1, &vao);
@@ -42,25 +42,47 @@ void Player::getNeighborTriangles(std::vector<Vertex>* va) const
 {
 	Voxel n_v, v = this->activePlanet->getVoxel(this->pos);
 	bool isPent;
+	bool n_isPent;
 	if (activePlanet->isValidVoxel(v)) {
 		activePlanet->renderVox(v, va, &isPent);
 		for (int i = 0; i < 5; i++) {
 			n_v = activePlanet->getNeighbor(v, i);
 			if (activePlanet->isValidVoxel(n_v)) {
-				activePlanet->renderVox(n_v, va);
+				activePlanet->renderVox(n_v, va, &n_isPent);
+				if (n_isPent) {
+					continue;
+				}
+				n_v = activePlanet->getNeighbor(n_v, i);
+				if (activePlanet->isValidVoxel(n_v)) {
+					activePlanet->renderVox(n_v, va);
+				}
 			}
 
 		}
 		if (!isPent) {
 			n_v = activePlanet->getNeighbor(v, 5);
 			if (activePlanet->isValidVoxel(n_v)) {
-				activePlanet->renderVox(n_v, va);
+				activePlanet->renderVox(n_v, va, &n_isPent);
+				if (!n_isPent) {
+					n_v = activePlanet->getNeighbor(n_v, 5);
+					if (activePlanet->isValidVoxel(n_v)) {
+						activePlanet->renderVox(n_v, va);
+					}
+				}
+
 			}
 		}
 		for (int i = 6; i < 8; i++) {
 			n_v = activePlanet->getNeighbor(v, i);
 			if (activePlanet->isValidVoxel(n_v)) {
-				activePlanet->renderVox(n_v, va);
+				activePlanet->renderVox(n_v, va, &n_isPent);
+				if (n_isPent) {
+					continue;
+				}
+				n_v = activePlanet->getNeighbor(n_v, i);
+				if (activePlanet->isValidVoxel(n_v)) {
+					activePlanet->renderVox(n_v, va);
+				}
 			}
 		}
 	}
@@ -120,12 +142,21 @@ glm::vec3 Player::closestPointOnTriangle(glm::vec3* tri, const glm::vec3& p) con
 }
 bool Player::collided(const glm::vec3& sphereCenter, std::vector<glm::vec3>& n) const {
 	std::vector<Vertex> va;
-	// this->getNeighborTriangles(&va);
+	std::vector<Vertex>* tmpVa;
+	//this->getNeighborTriangles(&va);
 	Voxel v = this->activePlanet->getVoxel(this->pos);
+
+	std::vector<ChunkLoc> cls = this->activePlanet->neighboringChunkLocs(v);
 	ChunkLoc c = this->activePlanet->GetChunkLoc(v);
-	int index = c.index * 5 + c.chunckRoot;
-	va = this->activePlanet->getChunk(index)->vertexArray;
+	cls.push_back(c);
+	for (ChunkLoc cl : cls) {
+		int index = cl.index * 5 + cl.chunckRoot;
+		tmpVa = &this->activePlanet->getChunk(index)->vertexArray;
+		va.insert(va.end(), tmpVa->begin(), tmpVa->end());
+	}
+
 	assert(va.size() % 3 == 0);
+
 	glm::vec3 tri[3];
 	bool collided = false;
 	glm::vec3 tmpN;
@@ -273,8 +304,10 @@ void Player::UpdatePos(float deltaTime)
 	this->frontVector = -glm::normalize(glm::cross(rightVector, camera->getCameraUp()));
 
 	if (this->mode == PlayerMode::WALKING) {
-		float airFriction = 5.0f;
-
+		float airFriction = this->activePlanet->getAirFriction();
+		if (this->onGround) {
+			airFriction += this->activePlanet->getGroundFriction();
+		}
 		if (glm::dot(velocity, rightVector) > 0 || glm::dot(velocity, rightVector) < 0) {
 			this->velocity -= rightVector * glm::dot(velocity, rightVector) * deltaTime * airFriction;
 		}
@@ -549,20 +582,21 @@ void Player::UpdateCamera()
 }
 
 
-void Player::move(Direction d, float stride)
+void Player::move(Direction d, float deltaTime)
 {
 	glm::vec3 directionVector;
 	glm::vec3 rightVector, frontVector; 
 	if (mode == PlayerMode::FLYING) {/*
 		frontVector = camera->getCameraFront();
 		rightVector = glm::normalize(glm::cross(camera->getCameraFront(), camera->getCameraUp()));*/
-		this->move2(d, stride);
+		this->move2(d, deltaTime);
 		return;
 	}
 	else if (mode == PlayerMode::WALKING) {
 		rightVector = glm::normalize(glm::cross(camera->getCameraFront(), camera->getCameraUp()));
 		frontVector = -glm::normalize(glm::cross(rightVector, camera->getCameraUp()));
-		float jumpForce = 1.0f;
+		float stride = this->speed * deltaTime;
+		float jumpForce = this->jumpForce / 10;
 
 		switch (d) {
 		case Direction::JUMP:
@@ -570,9 +604,10 @@ void Player::move(Direction d, float stride)
 				jumpForce = this->jumpForce;
 			}
 			if (this->jetpack || this->onGround) {
-				velocity += camera->getCameraUp() * stride * jumpForce;
-				return;
+				velocity += camera->getCameraUp() * deltaTime * jumpForce;
 			}
+			return;
+
 		case Direction::FORWARD:
 			directionVector = frontVector;
 			break;
@@ -595,16 +630,21 @@ void Player::move(Direction d, float stride)
 			stride = -stride;
 			break;
 		}
+		float oldVelSize = glm::dot(velocity, directionVector);
+		velocity -= oldVelSize * directionVector;
 
-		velocity = directionVector * stride + glm::dot(velocity, glm::cross(frontVector, -rightVector)) * glm::cross(frontVector, -rightVector);
+
+		velocity += directionVector * stride;
+
 		UpdateCamera();
 	}
 
 }
 
-void Player::move2(Direction d, float stride)
+void Player::move2(Direction d, float deltaTime)
 {
 	glm::vec3 directionVector;
+	float stride = deltaTime * this->speed;
 	switch (d) {
 	case Direction::FORWARD:
 		directionVector = camera->getCameraFront();
@@ -665,11 +705,10 @@ void Player::updateVertexArray()
 			glm::vec3 pos = boundaries[b[i][j]];
 			v.position = pos;
 			if (activePlanet->CheckCollision(pos, temp)) {
-				v.colorIndex = 1;
-
+				v.colorIndex = 4;
 			}
 			else {
-				v.colorIndex = 0;
+				v.colorIndex = 4;
 			}
 			if (i > 4) {
 				v.ambientOcclusion = 3;

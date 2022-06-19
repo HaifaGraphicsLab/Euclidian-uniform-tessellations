@@ -4,9 +4,9 @@
 PixelInfo createPixelInfo(const Voxel& v, int neighbor) {
 	PixelInfo p;
 	p.gridAndNeighbor = (neighbor << 16) | v.grid;
-	p.x = v.x;
-	p.y = v.y;
-	p.z = v.z;
+	p.x = v.x + 1;
+	p.y = v.y + 1;
+	p.z = v.z + 1;
 	return p;
 }
 Voxel extractPixelInfo(const PixelInfo& pi, bool* isSuccessful, int* neighbor) {
@@ -22,9 +22,9 @@ Voxel extractPixelInfo(const PixelInfo& pi, bool* isSuccessful, int* neighbor) {
 	Voxel v;
 	v.grid = grid;
 	*neighbor = n;
-	v.x = pi.x;
-	v.y = pi.y;
-	v.z = pi.z;
+	v.x = pi.x - 1;
+	v.y = pi.y - 1;
+	v.z = pi.z - 1;
 	return v;
 }
 Chunk::Chunk(ChunkBorder borders, ChunkLoc loc, Grid* grid)

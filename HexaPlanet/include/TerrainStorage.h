@@ -10,7 +10,7 @@ public:
 	static void loadTerrain(Planet* p, std::string name);
 	static bool isInNames(const std::string& name);
 	static void deleteTerrain(const std::string& name);
-	static void saveTerrain(Grid* const* terrain, std::string name);
+	static void saveTerrain(const Planet& p, std::string name);
 private:
 	static void updateSavedTerrainNames();
 	static std::string path;

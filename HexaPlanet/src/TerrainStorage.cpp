@@ -24,9 +24,16 @@ void TerrainStorage::loadTerrain(Planet* p, std::string name)
 	}
 	std::ifstream in(path + "\\" + name, std::ios_base::binary);
 	int size, maxHeight;
+	float baseHeight, voxelHeight;
 	if (in.is_open()) {
 		in >> size;
 		in >> maxHeight;
+		in >> baseHeight;
+		in >> voxelHeight;
+		p->setSize(size);
+		p->setMaxHeight(maxHeight);
+		p->setBaseHeight(baseHeight);
+		p->setVoxelHeight(voxelHeight);
 		
 		for (int i = 0; i < 5; i++) {
 			bool extra = (i == 0) || (i == 4);
@@ -65,20 +72,25 @@ void TerrainStorage::deleteTerrain(const std::string& name)
 
 }
 
-void TerrainStorage::saveTerrain(Grid* const* terrain, std::string name)
+void TerrainStorage::saveTerrain(const Planet& p, std::string name)
 {
 	if (!std::filesystem::is_directory(path) || !std::filesystem::exists(path)) { // Check if folder exists
 		std::filesystem::create_directory(path); // create folder
 	}
-	int size = (*terrain)->getY();
-	int maxHeight = (*terrain)->getZ();
+	int size = p.getGrid(0)->getY();
+	int maxHeight = p.getGrid(0)->getZ();
+	float baseHeight = p.getBaseHeight();
+	float voxelHeight = p.getVoxelHeight();
 	std::ofstream out(path + "\\" + name, std::ios_base::binary);
 	out << size << " ";
-	out << maxHeight;
+	out << maxHeight << " ";
+	out << baseHeight << " ";
+	out << voxelHeight;
+
 	for (int i = 0; i < 5; i++) {
 		int gridSize;
-		gridSize = terrain[i]->getX() * terrain[i]->getY() * terrain[i]->getZ();
-		out.write((char*)terrain[i]->getData(), gridSize * sizeof(int));
+		gridSize = p.getGrid(i)->getX() * p.getGrid(i)->getY() * p.getGrid(i)->getZ();
+		out.write((char*)p.getGrid(i)->getData(), gridSize * sizeof(int));
 	}
 	TerrainStorage::isUpdated = false;
 

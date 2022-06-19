@@ -13,7 +13,7 @@ public:
 	void UpdateCameraUp();
 	void UpdateCameraPos();
 	void UpdateCamera();
-	void move(Direction d, float stride);
+	void move(Direction d, float deltaTime);
 	void setActivePlanet(Planet* planet);
 	Planet* getActivePlanet() const;
 	void setJumpForce(float jumpForce);
@@ -52,7 +52,7 @@ private:
 	bool collided(const glm::vec3& sphereCenter, std::vector<glm::vec3>& n) const;
 	bool triangleCollided(const glm::vec3& sphereCenter, glm::vec3* tri, glm::vec3* n = NULL) const;
 	//bool collided(const glm::vec3& sphereCenter, const glm::vec3& vel, glm::vec3* tri, glm::vec3* outSphereCenter);
-	void move2(Direction d, float stride);
+	void move2(Direction d, float deltaTime);
 	void UpdateBoundaries();
 	Camera* camera;
 	Planet* activePlanet;
